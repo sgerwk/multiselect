@@ -10,3 +10,10 @@ Select multiple strings at the same time, allowing to choose one when pasting.
 The strings can also be passed as lines of a text file on standard input:
 ``multiselect < file``
 
+As an example, after running ``multiselect John Smith...`` and middle-clicking
+on the second field of a web form, the state is this:
+
+![multiselect screenshot](multiselect.png)
+
+the user can click '2' to have ``Smith`` pasted.
+
