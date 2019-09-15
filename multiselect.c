@@ -12,6 +12,12 @@
  * - allow more than 9 strings, with keys a,b,c,...
  * - data from selection: when another program selects something, get the
  *   selection, split it by lines and acquire the selection back
+ * - option for dealing with mozilla timeout drawback; one solution is to
+ *   discard the selection request as soon as it arrives, but map the window
+ *   and wait for a key; when the key is pressed, restore the pointer position
+ *   and send a middle-click even to force a new selection request, this time
+ *   served with the chosen string; this is not a general solution, because it
+ *   relies on middle-click for paste
  */
 
 /*

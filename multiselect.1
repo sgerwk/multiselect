@@ -102,3 +102,14 @@ middle-click on the textfield for the surname and press '2', and so on. When
 the form is full and submitted, control-C terminates \fImultiselect\fP so that
 the script proceeds to the second line.
 
+.
+.
+.
+.SH NOTE
+
+firefox discards pasted text if it arrives more than half a second later than
+when requested (e.g., by middle click); this is the \fIkClipboardTimeout\fP
+constant in the firefox source code, set to \fI500000\fP microseconds; it
+cannot be changed by configuration options, which means that the time for
+choosing the string to paste in \fImultiselect\fP is only half a second
+
