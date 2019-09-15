@@ -264,7 +264,8 @@ Bool SendSelection(Display *d, Time t, XSelectionRequestEvent *re,
 		if (! stringonly)
 			targetlist[targetlen++] =
 				XInternAtom(d, "UTF8_STRING", True);
-		XChangeProperty(d, re->requestor, re->property, re->target, 32,
+		XChangeProperty(d, re->requestor, re->property, // re->target,
+			XInternAtom(d, "ATOM", True), 32,
 			PropModeReplace,
 			(unsigned char *) &targetlist, targetlen);
 	}
