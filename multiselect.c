@@ -18,6 +18,17 @@
  *   and send a middle-click even to force a new selection request, this time
  *   served with the chosen string; this is not a general solution, because it
  *   relies on middle-click for paste
+ * - alternative for firefox: if a selection request arrives with atom
+ *   text/x-moz-text-internal, refuse (or ignore) it but set firefox=True; when
+ *   a key arrives, send a middle-click to firefox instead of the selection; a
+ *   new selection request should arrive, and this is served immediately
+ *   because firefox==True; then set firefox=False; both this and the previous
+ *   solution require storing the position of the pointer, and relies on that
+ *   not having moved too much between the original middle-click and the time
+ *   the original selection request arrived; also assumes that middle-click is
+ *   paste
+ * - yet another alternative for firefox: preload library for increasing
+ *   timeout on select
  */
 
 /*
