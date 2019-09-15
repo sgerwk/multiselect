@@ -352,7 +352,6 @@ int main(int argc, char *argv[]) {
 	Window prev, pprev;
 	int ret, pret;
 	int key;
-	// int regetselection = False;
 
 	char **buffers, *terminator;
 	int a, num;
@@ -497,7 +496,6 @@ int main(int argc, char *argv[]) {
 
 		case SelectionClear:
 			printf("selection clear\n");
-			// regetselection?
 			stayinloop = False;
 			break;
 
