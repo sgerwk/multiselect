@@ -496,6 +496,7 @@ int main(int argc, char *argv[]) {
 
 		case SelectionClear:
 			printf("selection clear\n");
+			XUngrabPointer(d, CurrentTime);
 			stayinloop = False;
 			break;
 
