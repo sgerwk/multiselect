@@ -1,0 +1,104 @@
+.TH multiselect 1 "September 14, 2019"
+
+.
+.
+.
+.SH NAME
+multiselect - a multiple selections server for X11
+
+.
+.
+.
+.SH SYNOPSIS
+
+.B multiselect
+[\fIstring ...\fP]
+
+.
+.
+.
+.SH DESCRIPTION
+
+Store multiple strings the user can choose among when pasting.
+
+The strings can be given in two ways:
+
+.IP "  * " 4
+as the commandline arguments; e.g., \fImultiselect first second third\fP
+
+.IP "  * "
+as lines of a text file passed to the program as its standard input:
+\fImultiselect < file\fP
+
+.P
+
+When the user pastes (e.g., by middle-clicking), these strings are shown.
+Pressing '1' causes the first to be pasted, '2' the second, '3' the third and
+so on. Any other key causes no string to be pasted.
+
+Only up to nine strings at time can be selected.
+
+.
+.
+.
+.SH USAGE
+
+The typical application of \fImultiselect\fP is to post data stored in a file
+to a web form. When several fields are present, a large number of
+select-and-paste steps are required: select the first field, paste in the form;
+select the second and paste; select the third and so on.
+
+If the fields can be extracted and put each on a line of another file, calling
+\fPmultiselect\fP on that file selects all fields at the same time. What
+remains to be done is only to paste each on the appropriate field of the web
+form. The same if \fPmultiselect\fP can be called with the fields as its
+commandline argument.
+
+.
+.
+.
+.SH EXAMPLE
+
+The following file is to be posted to a web form that has a textfield for the
+name, surname, address, city and state of residente.
+
+.nf
+John,Smith,2030 Blue Av.,Simonville,IL
+Lucas,Ortega,99 Green St.,Springfield,OH
+Robert,Pierre,1 Yellow Blvd.,Mongtown,NY
+.fi
+
+Instead of selecting and pasting each field of each person, a script can run
+\fImultiselect\fP on the data of each person, like this:
+
+.nf
+\fI
+    cat data.txt | \\
+    while read A;
+    do
+        echo "$A" | tr ',' '\\n' | multiselect
+    done
+\fP
+.fi
+
+The result is:
+
+.nf
+\fI
+    selected strings:
+       1: John
+       2: Smith
+       3: 2030 Blue Av.
+       4: Simonville
+       5: IL
+
+    middle-click and press 1-5 to paste one
+\fP
+.fi
+
+The data of the first person is ready: to paste the name, middle-click on the
+textfield for the name in the web form and press '1'. For the surname,
+middle-click on the textfield for the surname and press '2', and so on. When
+the form is full and submitted, control-C terminates \fImultiselect\fP so that
+the script proceeds to the second line.
+
