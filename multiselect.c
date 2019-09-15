@@ -468,11 +468,23 @@ int main(int argc, char *argv[]) {
 			PrintAtomName(d, e.xselectionrequest.target);
 			printf("\n");
 
+			re = &e.xselectionrequest;
+
 					/* request is for TARGETS */
 
-			re = &e.xselectionrequest;
 			if (re->target == XInternAtom(d, "TARGETS", True)) {
 				SendSelection(d, t, re, NULL, 0, False);
+				break;
+			}
+
+					/* request from firefox */
+
+			if (re->target == XInternAtom(d,
+					"text/x-moz-text-internal", True)) {
+				printf("\nWARNING: request from firefox\n");
+				printf("\ttimeout expired: 1/2 second\n");
+				printf("\tsee man page for details\n\n");
+				RefuseSelection(d, re);
 				break;
 			}
 
