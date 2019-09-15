@@ -345,7 +345,7 @@ int main(int argc, char *argv[]) {
 
 	Time t;
 	struct timeval last;
-	Bool exitnext, stayinloop;
+	Bool exitnext, stayinloop, pending;
 	XEvent e;
 	XSelectionRequestEvent *re, request;
 	KeySym k;
@@ -434,6 +434,7 @@ int main(int argc, char *argv[]) {
 
 				/* main loop */
 
+	pending = False;
 	request.target = None;
 	prev = None;
 	last.tv_sec = 0;
@@ -454,6 +455,14 @@ int main(int argc, char *argv[]) {
 			re = &e.xselectionrequest;
 			if (re->target == XInternAtom(d, "TARGETS", True)) {
 				SendSelection(d, t, re, NULL, 0, False);
+				break;
+			}
+
+					/* pending request */
+
+			if (pending) {
+				printf("pending request, refuse this\n");
+				RefuseSelection(d, re);
 				break;
 			}
 
@@ -478,6 +487,7 @@ int main(int argc, char *argv[]) {
 
 					/* map window */
 
+			pending = True;
 			WindowAtPointer(d, w);
 			XMapRaised(d, w);
 			// -> Expose
@@ -502,8 +512,10 @@ int main(int argc, char *argv[]) {
 
 		case KeyPress:
 			printf("key: %d\n", e.xkey.keycode);
-			if (request.target == None)
+			if (! pending) {
+				printf("no pending request\n");
 				break;
+			}
 			k = XLookupKeysym(&e.xkey, 0);
 			if ((int) k - '1' >= 0 && (int) k - '1' <= num) {
 				key = k - '1';
@@ -517,6 +529,7 @@ int main(int argc, char *argv[]) {
 
 			ShortTime(&last);
 			AnswerSelection(d, t, &request, buffers, key, False);
+			pending = False;
 			XUnmapWindow(d, w);
 			// -> UnmapNotify
 			break;
@@ -563,6 +576,8 @@ int main(int argc, char *argv[]) {
 		default:
 			printf("other event (%d)\n", e.type);
 		}
+
+		fflush(stdout);
 	}
 
 	XDestroyWindow(d, w);
