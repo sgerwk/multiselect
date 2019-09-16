@@ -373,7 +373,7 @@ int main(int argc, char *argv[]) {
 
 	Time t;
 	struct timeval last;
-	Bool exitnext, stayinloop, pending;
+	Bool exitnext, stayinloop, pending, firefox;
 	XEvent e;
 	XSelectionRequestEvent *re, request;
 	KeySym k;
@@ -463,6 +463,7 @@ int main(int argc, char *argv[]) {
 				/* main loop */
 
 	pending = False;
+	firefox = False;
 	request.target = None;
 	prev = None;
 	last.tv_sec = 0;
@@ -494,6 +495,7 @@ int main(int argc, char *argv[]) {
 				printf("\nWARNING: request from firefox\n");
 				printf("\ttimeout expired: 1/2 second\n");
 				printf("\tsee man page for details\n\n");
+				firefox = True;
 			}
 
 					/* request for unsupported type */
@@ -509,6 +511,15 @@ int main(int argc, char *argv[]) {
 			if (pending) {
 				printf("pending request, refusing this\n");
 				RefuseSelection(d, re);
+				break;
+			}
+
+					/* second request from firefox */
+
+			if (firefox) {
+				printf("firefox again, repeating answer\n");
+				AnswerSelection(d, t, re, buffers, key, False);
+				firefox = False;
 				break;
 			}
 
