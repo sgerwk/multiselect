@@ -464,7 +464,6 @@ int main(int argc, char *argv[]) {
 
 	pending = False;
 	firefox = False;
-	request.target = None;
 	prev = None;
 	last.tv_sec = 0;
 	last.tv_usec = 0;
