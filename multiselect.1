@@ -112,5 +112,9 @@ firefox discards pasted text if it arrives more than half a second later than
 when requested (e.g., by middle click); this is the \fIkClipboardTimeout\fP
 constant in the firefox source code, set to \fI500000\fP microseconds; it
 cannot be changed by configuration options, which means that the time for
-choosing the string to paste in \fImultiselect\fP is only half a second
+choosing the string to paste in \fImultiselect\fP is only half a second; in
+order to facilitate dealing with this drawback of firefox, \fImultiselect\fP
+detects a timeout in firefox and pastes the chosen string on the following
+request; this means that if middle-click + '1' does not work, a further
+middle-click may complete pasting (without pressing '1' again)
 

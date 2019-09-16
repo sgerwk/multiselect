@@ -12,23 +12,6 @@
  * - allow more than 9 strings, with keys a,b,c,...
  * - data from selection: when another program selects something, get the
  *   selection, split it by lines and acquire the selection back
- * - option for dealing with mozilla timeout drawback; one solution is to
- *   discard the selection request as soon as it arrives, but map the window
- *   and wait for a key; when the key is pressed, restore the pointer position
- *   and send a middle-click even to force a new selection request, this time
- *   served with the chosen string; this is not a general solution, because it
- *   relies on middle-click for paste
- * - alternative for firefox: if a selection request arrives with atom
- *   text/x-moz-text-internal, refuse (or ignore) it but set firefox=True; when
- *   a key arrives, send a middle-click to firefox instead of the selection; a
- *   new selection request should arrive, and this is served immediately
- *   because firefox==True; then set firefox=False; both this and the previous
- *   solution require storing the position of the pointer, and relies on that
- *   not having moved too much between the original middle-click and the time
- *   the original selection request arrived; also assumes that middle-click is
- *   paste
- * - yet another alternative for firefox: preload library for increasing
- *   timeout on select
  */
 
 /*
@@ -69,6 +52,31 @@
  * this is wrong because the user has decided not to paste anything, and
  * certainly is not expecting a string not in the list to be pasted; this is
  * why multiselect deletes the cut buffer at startup
+ */
+
+/*
+ * firefox
+ *
+ * the problem with firefox is that due to bad programming, it asks for the
+ * selection in a specific do/while loop with a timeout kClipboardTimeout of
+ * half a second, unchangeable by configuration options; this means that the
+ * user has only half a second to choose the string to paste
+ *
+ * the hack that is currently implemented is to detect firefox by a specific
+ * requests it done for a conversion to type "text/x-moz-text-internal" after
+ * its timeout expires; to facilitate the user, the next time a selection is
+ * requested, the previous string chosen is sent again
+ *
+ * an alternative that is also consistent with this is to send a middle-click
+ * to the requestor window after unmapping the window; this should causes
+ * firefox to ask the selection again, which is served immediately; this
+ * mechanism requires the current pointer coordinates to be saved and restored
+ * before sending the middle click, and relies on it not moving too much
+ * between the original click and the moment this program receives the
+ * selection request
+ *
+ * an alternative solution is a preload library for increasing the timeout in a
+ * select system call
  */
 
 #include <stdlib.h>
