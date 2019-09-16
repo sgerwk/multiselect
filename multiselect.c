@@ -593,12 +593,12 @@ int main(int argc, char *argv[]) {
 			printf("unmap\n");
 			if (exitnext)
 				stayinloop =  False;
-			if (prev == None)
+			XUngrabPointer(d, CurrentTime);
+			if (prev != None)
 				break;
 			XGetInputFocus(d, &pprev, &pret);
 			printf("revert focus 0x%lX -> 0x%lX\n", pprev, prev);
 			XSetInputFocus(d, prev, ret, CurrentTime);
-			XUngrabPointer(d, CurrentTime);
 			prev = None;
 			break;
 
