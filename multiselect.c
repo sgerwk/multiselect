@@ -211,6 +211,19 @@ void RefuseSelection(Display *d, XSelectionRequestEvent *re) {
 }
 
 /*
+ * check whether target of selection is supported
+ */
+Bool UnsupportedSelection(Display *d, Atom type, int stringonly) {
+	if (type == XA_STRING)
+		return False;
+	if (type == XInternAtom(d, "TARGETS", False))
+		return False;
+	if (! stringonly && type == XInternAtom(d, "UTF8_STRING", False))
+		return False;
+	return True;
+}
+
+/*
  * send the selection to answer a selection request event
  *
  * - it the requested target is not a string (or utf8), do not send it
@@ -229,10 +242,7 @@ Bool SendSelection(Display *d, Time t, XSelectionRequestEvent *re,
 
 				/* check type of selection requested */
 
-	if (re->target != XA_STRING &&
-	    re->target != XInternAtom(d, "TARGETS", True) &&
-	    (stringonly ||
-	     re->target != XInternAtom(d, "UTF8_STRING", True))) {
+	if (UnsupportedSelection(d, re->target, stringonly)) {
 		printf("request for an unsupported type\n");
 		RefuseSelection(d, re);
 		return True;
@@ -470,7 +480,7 @@ int main(int argc, char *argv[]) {
 
 			re = &e.xselectionrequest;
 
-					/* request is for TARGETS */
+					/* request for TARGETS */
 
 			if (re->target == XInternAtom(d, "TARGETS", True)) {
 				SendSelection(d, t, re, NULL, 0, False);
@@ -484,6 +494,12 @@ int main(int argc, char *argv[]) {
 				printf("\nWARNING: request from firefox\n");
 				printf("\ttimeout expired: 1/2 second\n");
 				printf("\tsee man page for details\n\n");
+			}
+
+					/* request for unsupported type */
+
+			if (UnsupportedSelection(d, re->target, False)) {
+				printf("unsupported selection type\n");
 				RefuseSelection(d, re);
 				break;
 			}
@@ -491,18 +507,16 @@ int main(int argc, char *argv[]) {
 					/* pending request */
 
 			if (pending) {
-				printf("pending request, refuse this\n");
+				printf("pending request, refusing this\n");
 				RefuseSelection(d, re);
 				break;
 			}
 
 					/* request in a short time */
 
-			request = *re;
 			if (ShortTime(&last)) {
 				printf("short time, repeating answer\n");
-				AnswerSelection(d, t, &request,
-						buffers, key, False);
+				AnswerSelection(d, t, re, buffers, key, False);
 				break;
 			}
 
@@ -515,8 +529,9 @@ int main(int argc, char *argv[]) {
 				printf("previous focus: 0x%lX\n", prev);
 			}
 
-					/* map window */
+					/* store request and map window */
 
+			request = *re;
 			pending = True;
 			WindowAtPointer(d, w);
 			XMapRaised(d, w);
