@@ -34,7 +34,8 @@ as lines of a text file passed to the program as its standard input:
 
 When the user pastes (e.g., by middle-clicking), these strings are shown.
 Pressing '1' causes the first to be pasted, '2' the second, '3' the third and
-so on. Any other key causes no string to be pasted.
+so on. Any other key causes no string to be pasted. Key 'q' terminates
+\fImultiselect\fP.
 
 Only up to nine strings at time can be selected.
 
@@ -99,8 +100,8 @@ The result is:
 The data of the first person is ready: to paste the name, middle-click on the
 textfield for the name in the web form and press '1'. For the surname,
 middle-click on the textfield for the surname and press '2', and so on. When
-the form is full and submitted, control-C terminates \fImultiselect\fP so that
-the script proceeds to the second line.
+the form is full and submitted, a further middle-click followed by key 'q'
+terminates \fImultiselect\fP so that the script proceeds to the second line.
 
 .
 .

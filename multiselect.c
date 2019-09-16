@@ -59,22 +59,6 @@
  */
 
 /*
- * closing
- *
- * a way for closing multiselect would be from the string choice window;
- * unfortunately, this window only gets open when another client requested the
- * selection; this request has to be served, otherwise the client is left
- * waiting for it
- *
- * refusing causes a similar problem, since the other client may then request
- * the selection again with a different conversion
- *
- * a solution would be to use the time passed again: when the user presses 'q'
- * in the window, this request and any following one is refused; when a timeout
- * expires the program quits
- */
-
-/*
  * the cut buffer
  *
  * the user may decide not to paste any of the stored strings by pressing an
@@ -412,7 +396,8 @@ int main(int argc, char *argv[]) {
 	printf("selected strings:\n");
 	for (a = 0; a < num; a++)
 		printf("%4d: %s\n", a + 1, buffers[a]);
-	printf("\nmiddle-click and press %d-%d to paste one\n", 1, num);
+	printf("\nmiddle-click and press %d-%d to paste one of them, ", 1, num);
+	printf("or 'q' to quit\n");
 
 				/* open display */
 
@@ -552,17 +537,11 @@ int main(int argc, char *argv[]) {
 			printf("expose\n");
 			draw(d, w, &wp, buffers, num);
 			XSetInputFocus(d, w, RevertToNone, CurrentTime);
-			// also grab pointer to disallow the client from
-			// making other requests
+			// grab pointer to disallow the other client from
+			// making further requests
 			XGrabPointer(d, w, True, 0,
 				GrabModeAsync, GrabModeAsync,
 				False, None, CurrentTime);
-			break;
-
-		case SelectionClear:
-			printf("selection clear\n");
-			XUngrabPointer(d, CurrentTime);
-			stayinloop = False;
 			break;
 
 		case KeyPress:
@@ -577,9 +556,15 @@ int main(int argc, char *argv[]) {
 				printf("pasting %s\n", buffers[key]);
 			}
 			else {
-				// do not uncomment, see notes at top
-				// exitnext = k == 'q';
 				key = -1;
+				if (k == 'q') {
+					exitnext = True;
+					// disown selection so that the
+					// requestor will not ask for it again
+					// with a different conversion
+					XSetSelectionOwner(d, XA_PRIMARY,
+						None, CurrentTime);
+				}
 			}
 
 			ShortTime(&last);
@@ -591,15 +576,25 @@ int main(int argc, char *argv[]) {
 
 		case UnmapNotify:
 			printf("unmap\n");
-			if (exitnext)
-				stayinloop =  False;
-			XUngrabPointer(d, CurrentTime);
-			if (prev != None)
+			if (prev == None && ! exitnext) {
+				XUngrabPointer(d, CurrentTime);
 				break;
+			}
 			XGetInputFocus(d, &pprev, &pret);
 			printf("revert focus 0x%lX -> 0x%lX\n", pprev, prev);
 			XSetInputFocus(d, prev, ret, CurrentTime);
+			XUngrabPointer(d, CurrentTime);
 			prev = None;
+			if (exitnext)
+				stayinloop =  False;
+			break;
+
+		case SelectionClear:
+			printf("selection clear\n");
+			if (exitnext)
+				break;
+			XUngrabPointer(d, CurrentTime);
+			stayinloop = False;
 			break;
 
 		case PropertyNotify:
