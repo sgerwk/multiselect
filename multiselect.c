@@ -92,7 +92,7 @@
 /*
  * check whether a short time passed since the last call
  */
-int ShortTime(struct timeval *last) {
+Bool ShortTime(struct timeval *last) {
 	struct timeval now;
 	int interval = 50000;
 	Bool ret = True;
