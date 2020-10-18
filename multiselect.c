@@ -100,7 +100,8 @@ Bool WindowNameExists(Display *d, char *name) {
 	root = DefaultRootWindow(d);
 	XQueryTree(d, root, &rootout, &parent, &children, &nchildren);
 	for (i = 0; i < nchildren; i++) {
-		XFetchName(d, children[i], &p);
+		if (XFetchName(d, children[i], &p) == 0)
+			continue;
 		if (! strcmp(name, p)) {
 			XFree(children);
 			return True;
