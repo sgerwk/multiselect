@@ -90,6 +90,28 @@
 #define MIN(a,b) (((a) < (b)) ? (a) : (b))
 
 /*
+ * check the existence of a window with a certain name
+ */
+Bool WindowNameExists(Display *d, char *name) {
+	Window root, rootout, parent, *children;
+	unsigned int nchildren, i;
+	char *p;
+
+	root = DefaultRootWindow(d);
+	XQueryTree(d, root, &rootout, &parent, &children, &nchildren);
+	for (i = 0; i < nchildren; i++) {
+		XFetchName(d, children[i], &p);
+		if (! strcmp(name, p)) {
+			XFree(children);
+			return True;
+		}
+	}
+
+	XFree(children);
+	return False;
+}
+
+/*
  * check whether a short time passed since the last call
  */
 Bool ShortTime(struct timeval *last) {
@@ -399,14 +421,6 @@ int main(int argc, char *argv[]) {
 			buffers[a] = argv[a + 1];
 	}
 
-				/* print strings and instructions */
-
-	printf("selected strings:\n");
-	for (a = 0; a < num; a++)
-		printf("%4d: %s\n", a + 1, buffers[a]);
-	printf("\nmiddle-click and press %d-%d to paste one of them, ", 1, num);
-	printf("or 'q' to quit\n");
-
 				/* open display */
 
 	d = XOpenDisplay(NULL);
@@ -414,7 +428,20 @@ int main(int argc, char *argv[]) {
 		printf("Cannot open display %s\n", XDisplayName(NULL));
 		exit(EXIT_FAILURE);
 	}
+	if (WindowNameExists(d, wmname)) {
+		printf("%s already running\n", wmname);
+		XCloseDisplay(d);
+		exit(EXIT_FAILURE);
+	}
 	s = DefaultScreenOfDisplay(d);
+
+				/* print strings and instructions */
+
+	printf("selected strings:\n");
+	for (a = 0; a < num; a++)
+		printf("%4d: %s\n", a + 1, buffers[a]);
+	printf("\nmiddle-click and press %d-%d to paste one of them, ", 1, num);
+	printf("or 'q' to quit\n");
 
 				/* load font and colors */
 
