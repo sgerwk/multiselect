@@ -92,12 +92,11 @@
 /*
  * check the existence of a window with a certain name
  */
-Bool WindowNameExists(Display *d, char *name) {
-	Window root, rootout, parent, *children;
+Bool WindowNameExists(Display *d, Window root, char *name) {
+	Window rootout, parent, *children;
 	unsigned int nchildren, i;
 	char *p;
 
-	root = DefaultRootWindow(d);
 	XQueryTree(d, root, &rootout, &parent, &children, &nchildren);
 	for (i = 0; i < nchildren; i++) {
 		if (XFetchName(d, children[i], &p) == 0)
@@ -135,13 +134,12 @@ Bool ShortTime(struct timeval *last) {
 /*
  * position of the pointer
  */
-void PointerPosition(Display *d, int *x, int *y) {
-	Window root, child;
+void PointerPosition(Display *d, Window r, int *x, int *y) {
+	Window child;
 	int wx, wy;
 	unsigned int mask;
 
-	root = DefaultRootWindow(d);
-	XQueryPointer(d, root, &root, &child, x, y, &wx, &wy, &mask);
+	XQueryPointer(d, r, &r, &child, x, y, &wx, &wy, &mask);
 }
 
 /*
@@ -155,7 +153,7 @@ void WindowAtPointer(Display *d, Window w) {
 	XGetGeometry(d, w, &root, &x, &y, &width, &height, &border, &depth);
 	XGetGeometry(d, root, &r, &x, &y, &rwidth, &rheight, &rborder, &depth);
 
-	PointerPosition(d, &x, &y);
+	PointerPosition(d, root, &x, &y);
 	x =  x - (int) width / 2;
 	if (x < 0)
 		x = border;
@@ -378,7 +376,7 @@ void draw(Display *d, Window w, struct WindowParameters *wp,
 int main(int argc, char *argv[]) {
 	Display *d;
 	Screen *s;
-	Window w;
+	Window r, w;
 	XColor sc;
 	char *font = "-misc-*-medium-*-*-*-18-*-*-*-*-*-iso10646-1";
 	struct WindowParameters wp;
@@ -429,12 +427,13 @@ int main(int argc, char *argv[]) {
 		printf("Cannot open display %s\n", XDisplayName(NULL));
 		exit(EXIT_FAILURE);
 	}
-	if (WindowNameExists(d, wmname)) {
+	s = DefaultScreenOfDisplay(d);
+	r = DefaultRootWindow(d);
+	if (WindowNameExists(d, r, wmname)) {
 		printf("%s already running\n", wmname);
 		XCloseDisplay(d);
 		exit(EXIT_FAILURE);
 	}
-	s = DefaultScreenOfDisplay(d);
 
 				/* print strings and instructions */
 
@@ -478,8 +477,7 @@ int main(int argc, char *argv[]) {
 
 				/* remove the first cut buffer */
 
-	XDeleteProperty(d, DefaultRootWindow(d),
-		XInternAtom(d, "CUT_BUFFER0", True));
+	XDeleteProperty(d, r, XInternAtom(d, "CUT_BUFFER0", True));
 
 				/* main loop */
 
