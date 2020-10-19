@@ -538,6 +538,7 @@ int main(int argc, char *argv[]) {
 				printf("firefox again, repeating answer\n");
 				AnswerSelection(d, t, re, buffers, key, False);
 				firefox = False;
+				ShortTime(&last);
 				break;
 			}
 
