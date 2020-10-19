@@ -619,8 +619,10 @@ int main(int argc, char *argv[]) {
 			XSetInputFocus(d, prev, ret, CurrentTime);
 			XUngrabPointer(d, CurrentTime);
 			prev = None;
-			if (exitnext)
+			if (exitnext) {
+				printf("exiting\n");
 				stayinloop =  False;
+			}
 			break;
 
 		case SelectionClear:
