@@ -9,7 +9,7 @@
  * - allow to choose the string to send by the mouse (right click to refuse);
  *   make a subwindow for every string that can be pasted, use events of type
  *   XCrossingEvent to detect enter/leave, for hightlighting and chosing
- * - allow more than 9 strings, with keys a,b,c,...
+ * - allow for more than 9 strings, with keys a,b,c,...
  * - data from selection: when another program selects something, get the
  *   selection, split it by lines and acquire the selection back
  */
@@ -46,12 +46,12 @@
  *
  * the user may decide not to paste any of the stored strings by pressing an
  * invalid key; this causes the request for the selection to be refused, as
- * well as any following one arrived in a short time; when this happens, the
+ * well as every following one arrived in a short time; when this happens, the
  * other client may decide the use the cut buffer
  *
  * this is wrong because the user has decided not to paste anything, and
- * certainly is not expecting a string not in the list to be pasted; this is
- * why multiselect deletes the cut buffer at startup
+ * certainly is not expecting a string not among the selections; this is why
+ * multiselect deletes the cut buffer at startup
  */
 
 /*
@@ -314,7 +314,7 @@ Bool SendSelection(Display *d, Time t, XSelectionRequestEvent *re,
 }
 
 /*
- * answer a request for selection
+ * answer a request for the selection
  */
 Bool AnswerSelection(Display *d, Time t, XSelectionRequestEvent *request,
 		char **buffers, int key, int stringonly) {
