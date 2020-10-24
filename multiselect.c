@@ -10,8 +10,12 @@
  *   make a subwindow for every string that can be pasted, use events of type
  *   XCrossingEvent to detect enter/leave, for hightlighting and chosing
  * - allow for more than 9 strings, with keys a,b,c,...
- * - data from selection: when another program selects something, get the
- *   selection, split it by lines and acquire the selection back
+ * - the current selections can only be shown and changed when another
+ *   program tries to paste one; some programs can copy text but never paste
+ *   it (e.g., pdf viewers) or paste it only in certain points (web browser);
+ *   use another key combination to show and change the selections?
+ * - multiselect only makes a single request for the selection when adding one;
+ *   the result may be only an initial part of the selection if it is long
  */
 
 /*
@@ -79,8 +83,26 @@
  * select system call
  */
 
+/*
+ * the flash window
+ *
+ * when the user adds a selection by ctrl-shift-z, the selections are briefly
+ * shown to confirm that the addition succeded
+ *
+ * this is done by a window that is not the multiselect window because of its
+ * different treatment of events: only Expose events matter, and they cause the
+ * window to be redrawn and closed after a short time
+ *
+ * ideally, the window should only be redrawn on Expose events, while closure
+ * be controlled by a timeout; just flushing the X queue, waiting and closing
+ * the window in response to Expose events seems to work anyway; a fallback
+ * based on the elapsed time ensures that the window is eventually closed even
+ * if no Expose event is received
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <string.h>
 #include <sys/time.h>
 #include <X11/Xlib.h>
@@ -114,9 +136,8 @@ Bool WindowNameExists(Display *d, Window root, char *name) {
 /*
  * check whether a short time passed since the last call
  */
-Bool ShortTime(struct timeval *last) {
+Bool ShortTime(struct timeval *last, int interval, Bool store) {
 	struct timeval now;
-	int interval = 50000;
 	Bool ret = True;
 
 	gettimeofday(&now, NULL);
@@ -126,9 +147,20 @@ Bool ShortTime(struct timeval *last) {
 	ret = now.tv_usec + 1000000 * (now.tv_sec - last->tv_sec)
 	      <= last->tv_usec + interval;
 
-	*last = now;
+	if (store)
+		*last = now;
 	printf("shorttime: %s\n", ret ? "True" : "False");
 	return ret;
+}
+
+/*
+ * resize the window to fit the current number of strings
+ */
+void ResizeWindow(Display *d, Window w, XFontStruct *fs, int num) {
+	int width, height;
+	width = 400;
+	height = (fs->ascent + fs->descent) * (num + 1);
+	XResizeWindow(d, w, width, height);
 }
 
 /*
@@ -191,7 +223,7 @@ Time GetTimestampForNow(Display *d, Window w) {
 /*
  * acquire ownership of the primary selection
  */
-Bool AcquirePrimarySelection(Display *d, Window w, Time *t) {
+Bool AcquirePrimarySelection(Display *d, Window root, Window w, Time *t) {
 	Window o;
 
 	XSetSelectionOwner(d, XA_PRIMARY, w, CurrentTime);
@@ -202,6 +234,7 @@ Bool AcquirePrimarySelection(Display *d, Window w, Time *t) {
 	}
 	if (t != NULL)
 		*t = GetTimestampForNow(d, w);
+	XDeleteProperty(d, root, XInternAtom(d, "CUT_BUFFER0", True));
 	return False;
 }
 
@@ -281,6 +314,7 @@ Bool SendSelection(Display *d, Time t, XSelectionRequestEvent *re,
 
 				/* store the selection or the targets */
 
+	printf("storing selection: %s\n", chars);
 	if (re->target == XInternAtom(d, "TARGETS", True)) {
 		targetlen = 0;
 		targetlist[targetlen++] = XInternAtom(d, "STRING", True);
@@ -328,6 +362,34 @@ Bool AnswerSelection(Display *d, Time t, XSelectionRequestEvent *request,
 }
 
 /*
+ * retrieve the selection
+ */
+char *GetSelection(Display *d, Window w, Atom selection, Atom target) {
+	Bool res;
+	int format;
+	unsigned long i, nitems, after;
+	unsigned char *string;
+	Atom actualtype;
+	char *r;
+
+	res = XGetWindowProperty(d, w, selection, 0, 200, True, target,
+		&actualtype, &format, &nitems, &after, &string);
+	if (res != Success)
+		return NULL;
+	if (actualtype != XA_STRING)
+		return NULL;
+
+	printf("bytes left: %lu\n", after);
+	for (i = 0; i < nitems; i++)
+		printf("%c", string[i]);
+	printf("\n");
+
+	r = strdup((char *) string);
+	XFree(string);
+	return r;
+}
+
+/*
  * window parameters
  */
 struct WindowParameters {
@@ -347,7 +409,7 @@ void draw(Display *d, Window w, struct WindowParameters *wp,
 	unsigned int width, height, bw, depth, nwidth;
 	int lpos, interline;
 	int i;
-	char num[10];
+	char num[10], help[] = "multiselect";
 
 	XClearWindow(d, w);
 	XSetBackground(d, wp->g, wp->white);
@@ -357,12 +419,17 @@ void draw(Display *d, Window w, struct WindowParameters *wp,
 	interline = wp->fs->ascent + wp->fs->descent;
 	lpos = wp->fs->ascent;
 
-	for (i = 0; i < n; i++) {
-		sprintf(num, "%d ", i + 1);
-		XDrawString(d, w, wp->g, 0, lpos, num, strlen(num));
-		nwidth = XTextWidth(wp->fs, num, strlen(num));
-		XDrawString(d, w, wp->g, nwidth, lpos,
-			buffers[i], MIN(strlen(buffers[i]), 100));
+	for (i = -1; i < n; i++) {
+		if (i == -1)
+			XDrawString(d, w, wp->g, 0, lpos,
+				help, MIN(sizeof(help) - 1, 100));
+		else {
+			sprintf(num, "%d ", i + 1);
+			XDrawString(d, w, wp->g, 0, lpos, num, strlen(num));
+			nwidth = XTextWidth(wp->fs, num, strlen(num));
+			XDrawString(d, w, wp->g, nwidth, lpos,
+				buffers[i], MIN(strlen(buffers[i]), 100));
+		}
 		XDrawLine(d, w, wp->g,
 			0, lpos + wp->fs->descent,
 			width, lpos + wp->fs->descent);
@@ -376,16 +443,16 @@ void draw(Display *d, Window w, struct WindowParameters *wp,
 int main(int argc, char *argv[]) {
 	Display *d;
 	Screen *s;
-	Window r, w;
+	Window r, w, f;
 	XColor sc;
 	char *font = "-misc-*-medium-*-*-*-18-*-*-*-*-*-iso10646-1";
-	struct WindowParameters wp;
+	struct WindowParameters wp, fp;
 	char *wmname = "multiselect";
 	XSetWindowAttributes swa;
-	unsigned int width, height;
 
 	Time t;
-	struct timeval last;
+	struct timeval last, flashtime;
+	int interval = 50000;
 	Bool exitnext, stayinloop, pending, firefox;
 	XEvent e;
 	XSelectionRequestEvent *re, request;
@@ -395,13 +462,13 @@ int main(int argc, char *argv[]) {
 	int key;
 
 	char **buffers, *terminator;
-	int a, num;
+	int a, num, size = 9;
 
 				/* parse arguments */
 
-	if (argc - 1 < 1) {
-		printf("no argument passed, reading strings from stdin\n");
-		buffers = malloc(10 * sizeof(char *));
+	if (argc - 1 == 1 && ! strcmp(argv[1], "-")) {
+		printf("reading selections from stdin\n");
+		buffers = malloc(size * sizeof(char *));
 		for (num = 0; num < 9; num++) {
 			buffers[num] = malloc(500 * sizeof(char));
 			if (NULL == fgets(buffers[num], 500, stdin)) {
@@ -415,9 +482,9 @@ int main(int argc, char *argv[]) {
 	}
 	else {
 		num = MIN(argc - 1, 9);
-		buffers = malloc(num * sizeof(char *));
+		buffers = malloc(size * sizeof(char *));
 		for (a = 0; a < num; a++)
-			buffers[a] = argv[a + 1];
+			buffers[a] = strdup(argv[a + 1]);
 	}
 
 				/* open display */
@@ -434,6 +501,29 @@ int main(int argc, char *argv[]) {
 		XCloseDisplay(d);
 		exit(EXIT_FAILURE);
 	}
+	XGrabKey(d, XKeysymToKeycode(d, XK_z), ControlMask | ShiftMask,
+		r, False, GrabModeAsync, GrabModeAsync);
+
+				/* create the window, set font and input */
+
+	swa.background_pixel = WhitePixelOfScreen(s);
+	swa.override_redirect = True;
+	w = XCreateWindow(d, r, 0, 0, 1, 1, 1,
+		CopyFromParent, CopyFromParent, CopyFromParent,
+		CWBackPixel | CWOverrideRedirect, &swa);
+	printf("selection window: 0%lx\n", w);
+	XStoreName(d, w, wmname);
+
+	XSelectInput(d, w, ExposureMask | StructureNotifyMask | \
+		KeyPressMask | PropertyChangeMask);
+
+				/* flash window */
+
+	f = XCreateWindow(d, r, 0, 0, 50, 10, 1,
+		CopyFromParent, CopyFromParent, CopyFromParent,
+		CWBackPixel | CWOverrideRedirect, &swa);
+	printf("flash window: 0%lx\n", f);
+	XSelectInput(d, f, ExposureMask);
 
 				/* print strings and instructions */
 
@@ -446,38 +536,25 @@ int main(int argc, char *argv[]) {
 				/* load font and colors */
 
 	wp.fs = XLoadQueryFont(d, font);
+
 	XAllocNamedColor(d, DefaultColormapOfScreen(s), "black", &sc, &sc);
 	wp.black = sc.pixel;
 	XAllocNamedColor(d, DefaultColormapOfScreen(s), "white", &sc, &sc);
 	wp.white = sc.pixel;
 
-				/* create the window, set font and input */
-
-	width = 400;
-	height = (wp.fs->ascent + wp.fs->descent) * num;
-	w = XCreateSimpleWindow(d, DefaultRootWindow(d), 0, 0, width, height,
-		1, BlackPixelOfScreen(s), WhitePixelOfScreen(s));
-	XStoreName(d, w, wmname);
-
-	swa.override_redirect = True;
-	XChangeWindowAttributes(d, w, CWOverrideRedirect, &swa);
-
 	wp.g = XCreateGC(d, w, 0, NULL);
 	XSetFont(d, wp.g, wp.fs->fid);
 
-	XSelectInput(d, w, ExposureMask | StructureNotifyMask | \
-		KeyPressMask | PropertyChangeMask);
+	fp = wp;
+	fp.g = XCreateGC(d, f, 0, NULL);
+	XSetFont(d, fp.g, fp.fs->fid);
 
 				/* acquire primary selection */
 
-	if (AcquirePrimarySelection(d, w, &t)) {
+	if (AcquirePrimarySelection(d, r, w, &t)) {
 		XCloseDisplay(d);
 		return EXIT_FAILURE;
 	}
-
-				/* remove the first cut buffer */
-
-	XDeleteProperty(d, r, XInternAtom(d, "CUT_BUFFER0", True));
 
 				/* main loop */
 
@@ -490,6 +567,17 @@ int main(int argc, char *argv[]) {
 
 	for (stayinloop = True, exitnext = False; stayinloop;) {
 		XNextEvent(d, &e);
+
+		if (e.type == Expose && e.xexpose.window == f) {
+			printf("expose on the flash window\n");
+			draw(d, f, &fp, buffers, num);
+			XFlush(d);
+			usleep(500000);
+			XUnmapWindow(d, f);
+			continue;
+		}
+		if (! ShortTime(&flashtime, 500000, False))
+			XUnmapWindow(d, f);
 
 		switch (e.type) {
 		case SelectionRequest:
@@ -538,13 +626,13 @@ int main(int argc, char *argv[]) {
 				printf("firefox again, repeating answer\n");
 				AnswerSelection(d, t, re, buffers, key, False);
 				firefox = False;
-				ShortTime(&last);
+				ShortTime(&last, interval, True);
 				break;
 			}
 
 					/* request in a short time */
 
-			if (ShortTime(&last)) {
+			if (ShortTime(&last, interval, True)) {
 				printf("short time, repeating answer\n");
 				AnswerSelection(d, t, re, buffers, key, False);
 				break;
@@ -563,6 +651,7 @@ int main(int argc, char *argv[]) {
 
 			request = *re;
 			pending = True;
+			ResizeWindow(d, w, wp.fs, num);
 			WindowAtPointer(d, w);
 			XMapRaised(d, w);
 			// -> Expose
@@ -579,34 +668,81 @@ int main(int argc, char *argv[]) {
 				False, None, CurrentTime);
 			break;
 
+		case SelectionNotify:
+			if (e.xselection.property == None)
+				break;
+			if (num >= size)
+				break;
+			buffers[num] = GetSelection(d, w,
+				e.xselection.selection, e.xselection.target);
+			if (buffers[num] != NULL)
+				num++;
+
+			WindowAtPointer(d, f);
+			ResizeWindow(d, f, wp.fs, num);
+			XMapRaised(d, f);
+			ShortTime(&flashtime, 0, True);
+			break;
+
 		case KeyPress:
 			printf("key: %d\n", e.xkey.keycode);
+			k = XLookupKeysym(&e.xkey, 0);
+			if (e.xkey.window == r && k == 'z') {
+				printf("add new selection\n");
+				if (num < size)
+					XConvertSelection(d, XA_PRIMARY,
+						XA_STRING, XA_PRIMARY,
+						w, CurrentTime);
+				if (AcquirePrimarySelection(d, r, w, &t)) {
+					XCloseDisplay(d);
+					return EXIT_FAILURE;
+				}
+				break;
+			}
 			if (! pending) {
 				printf("no pending request\n");
 				break;
 			}
-			k = XLookupKeysym(&e.xkey, 0);
-			if ((int) k - '1' >= 0 && (int) k - '1' <= num) {
+			if ((int) k - '1' >= 0 && (int) k - '1' < num) {
 				key = k - '1';
 				printf("pasting %s\n", buffers[key]);
 			}
 			else {
 				key = -1;
-				if (k == 'q') {
+				switch (k) {
+				case 's':
+					printf("delete last selection\n");
+					if (num > 0) {
+						num--;
+						free(buffers[num]);
+					}
+					break;
+				case 'd':
+					printf("delete all selections\n");
+					for (a = 0; a < num; a++)
+						free(buffers[a]);
+					num = 0;
+					break;
+				case 'q':
 					exitnext = True;
 					// disown selection so that the
 					// requestor will not ask for it again
 					// with a different conversion
 					XSetSelectionOwner(d, XA_PRIMARY,
 						None, CurrentTime);
+					break;
 				}
 			}
 
-			ShortTime(&last);
+			ShortTime(&last, interval, True);
 			AnswerSelection(d, t, &request, buffers, key, False);
 			pending = False;
 			XUnmapWindow(d, w);
 			// -> UnmapNotify
+			break;
+
+		case KeyRelease:
+			printf("keyrelease\n");
 			break;
 
 		case UnmapNotify:
@@ -631,7 +767,6 @@ int main(int argc, char *argv[]) {
 			if (exitnext)
 				break;
 			XUngrabPointer(d, CurrentTime);
-			stayinloop = False;
 			break;
 
 		case PropertyNotify:

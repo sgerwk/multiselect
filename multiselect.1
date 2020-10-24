@@ -12,7 +12,7 @@ multiselect - a multiple selections server for X11
 .SH SYNOPSIS
 
 .B multiselect
-[\fIstring ...\fP]
+[-|\fIstring ...\fP]
 
 .
 .
@@ -21,21 +21,24 @@ multiselect - a multiple selections server for X11
 
 Store multiple strings the user can choose among when pasting.
 
-The strings can be given in two ways:
+The strings can be given in three ways:
 
 .IP "  * " 4
 as the commandline arguments; e.g., \fImultiselect first second third\fP
 
 .IP "  * "
 as lines of a text file passed to the program as its standard input:
-\fImultiselect < file\fP
+\fImultiselect - < file\fP
+
+.IP "  * "
+adding them at run-time with ctrl-shift-z
 
 .P
 
 When the user pastes (e.g., by middle-clicking), these strings are shown.
 Pressing '1' causes the first to be pasted, '2' the second, '3' the third and
-so on. Any other key causes no string to be pasted. Key 'q' terminates
-\fImultiselect\fP.
+so on. Pressing 's' deletes the last string, 'd' deletes all of them. Every
+other key causes no string to be pasted. Key 'q' terminates \fImultiselect\fP.
 
 Only up to nine strings at time can be selected.
 
@@ -55,13 +58,17 @@ remains to be done is only to paste each on the appropriate field of the web
 form. The same if \fPmultiselect\fP can be called with the fields as its
 commandline argument.
 
+Strings can be added and removed at runtime. To remove the last, middle-click
+and press 's'. To remove all, middle-click and press 'd'. To add one, select it
+and press ctrl-shift-z.
+
 .
 .
 .
-.SH EXAMPLE
+.SH BATCH EXAMPLE
 
 The following file is to be posted to a web form that has a textfield for the
-name, surname, address, city and state of residente.
+name, surname, address, city and state of residence.
 
 .nf
 John,Smith,2030 Blue Av.,Simonville,IL
@@ -77,7 +84,7 @@ Instead of selecting and pasting each field of each person, a script can run
     cat data.txt | \\
     while read A;
     do
-        echo "$A" | tr ',' '\\n' | multiselect
+        echo "$A" | tr ',' '\\n' | multiselect -
     done
 \fP
 .fi
@@ -102,6 +109,24 @@ textfield for the name in the web form and press '1'. For the surname,
 middle-click on the textfield for the surname and press '2', and so on. When
 the form is full and submitted, a further middle-click followed by key 'q'
 terminates \fImultiselect\fP so that the script proceeds to the second line.
+
+.
+.
+.
+.SH INTERACTIVE EXAMPLE
+
+The strings "John Smith", "2030 Blue Ave" and "Simonville IL" are scattered
+around a text file, hard to be found by scripts.
+
+Open the text file and start \fImultiselect\fP with no argument.
+
+Select "John Smith" in the text file and press ctrl-shift-z. Then, select
+"2030 Blue Ave" and press ctrl-shift-z. Finally, select "Simonville IL" and
+press ctrl-shift-z.
+
+The strings are now ready to be pasted: middle-click on the text field for the
+name and press '1', middle-click on the field for the address and press '2',
+middle-click on the field for the city and press '3', as above.
 
 .
 .
