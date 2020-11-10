@@ -445,7 +445,7 @@ int main(int argc, char *argv[]) {
 	Screen *s;
 	Window r, w, f;
 	XColor sc;
-	char *font = "-misc-*-medium-*-*-*-18-*-*-*-*-*-iso10646-1";
+	char *font = "-*-*-medium-r-*-*-18-*-*-*-m-*-iso10646-1";
 	struct WindowParameters wp, fp;
 	char *wmname = "multiselect";
 	XSetWindowAttributes swa;
