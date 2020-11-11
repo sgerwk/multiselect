@@ -12,6 +12,7 @@ multiselect - a multiple selections server for X11
 .SH SYNOPSIS
 
 .B multiselect
+[\fI-t sep\fP]
 [-|\fIstring ...\fP]
 
 .
@@ -41,6 +42,9 @@ so on. Pressing 's' deletes the last string, 'd' deletes all of them. Every
 other key causes no string to be pasted. Key 'q' terminates \fImultiselect\fP.
 
 Only up to nine strings at time can be selected.
+
+Option \fI-t sep\fP makes everything up to the first \fIsep\fP character in
+each string displayed in the menu but not pasted (see \fILABELS\fP, below).
 
 .
 .
@@ -127,6 +131,38 @@ press ctrl-shift-z.
 The strings are now ready to be pasted: middle-click on the text field for the
 name and press '1', middle-click on the field for the address and press '2',
 middle-click on the field for the city and press '3', as above.
+
+.
+.
+.
+.SH LABELS
+
+Giving \fI-t' '\fP makes the first word of each string a label that is
+displayed when middle-clicking but not pasted. An example is:
+
+.nf
+\fI
+    multiselect -t' ' 'name: John' 'surname: Smith' 'address: Unknown'
+\fP
+.fi
+
+The three strings are displayed in full when middle clicking:
+
+.nf
+\fI
+    name: John
+    surname: Smith
+    address: Unknown
+\fP
+.fi
+
+Pressing \fI2\fP only pastes \fISmith\fP.
+
+Every single character can be used in place of the space except the null
+character \fI\\0\fP. The strings are displayed in full, but only what follows
+the first first occurrence of the character is pasted. If a string does not
+contain the character at all is pasted in full, as if it had no label. This
+option affects all three ways to specify the selections.
 
 .
 .

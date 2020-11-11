@@ -351,14 +351,22 @@ Bool SendSelection(Display *d, Time t, XSelectionRequestEvent *re,
  * answer a request for the selection
  */
 Bool AnswerSelection(Display *d, Time t, XSelectionRequestEvent *request,
-		char **buffers, int key, int stringonly) {
+		char **buffers, char separator, int key, int stringonly) {
+	char *selection, *start;
+
 	if (key == -1) {
 		RefuseSelection(d, request);
 		return False;
 	}
-	else
-		return SendSelection(d, t, request,
-			buffers[key], strlen(buffers[key]), stringonly);
+
+	if (separator == '\0')
+		selection = buffers[key];
+	else {
+		start = strchr(buffers[key], separator);
+		selection = start ? start + 1 : buffers[key];
+	}
+	return SendSelection(d, t, request,
+		selection, strlen(selection), stringonly);
 }
 
 /*
@@ -461,11 +469,22 @@ int main(int argc, char *argv[]) {
 	int ret, pret;
 	int key;
 
-	char **buffers, *terminator;
+	char **buffers, separator, *terminator;
 	int a, num, size = 9;
 
 				/* parse arguments */
 
+	if (argc - 1 >=1 && ! strncmp(argv[1], "-t", sizeof("-t") - 1)) {
+		if (argv[1][sizeof("-t") - 1] != '\0')
+			separator = argv[1][2];
+		else {
+			argc--;
+			argv++;
+			separator = argv[1][0];
+		}
+		argc--;
+		argv++;
+	}
 	if (argc - 1 == 1 && ! strcmp(argv[1], "-")) {
 		printf("reading selections from stdin\n");
 		buffers = malloc(size * sizeof(char *));
@@ -624,7 +643,8 @@ int main(int argc, char *argv[]) {
 
 			if (firefox) {
 				printf("firefox again, repeating answer\n");
-				AnswerSelection(d, t, re, buffers, key, False);
+				AnswerSelection(d, t, re,
+					buffers, separator, key, False);
 				firefox = False;
 				ShortTime(&last, interval, True);
 				break;
@@ -634,7 +654,8 @@ int main(int argc, char *argv[]) {
 
 			if (ShortTime(&last, interval, True)) {
 				printf("short time, repeating answer\n");
-				AnswerSelection(d, t, re, buffers, key, False);
+				AnswerSelection(d, t, re,
+					buffers, separator, key, False);
 				break;
 			}
 
@@ -735,7 +756,8 @@ int main(int argc, char *argv[]) {
 			}
 
 			ShortTime(&last, interval, True);
-			AnswerSelection(d, t, &request, buffers, key, False);
+			AnswerSelection(d, t, &request,
+				buffers, separator, key, False);
 			pending = False;
 			XUnmapWindow(d, w);
 			// -> UnmapNotify
