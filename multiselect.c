@@ -112,6 +112,12 @@
 #define MIN(a,b) (((a) < (b)) ? (a) : (b))
 
 /*
+ * font
+ */
+#define FONT "-*-*-medium-r-*-*-18-*-*-*-m-*-iso10646-1"
+#define WMNAME "multiselect"
+
+/*
  * check the existence of a window with a certain name
  */
 Bool WindowNameExists(Display *d, Window root, char *name) {
@@ -453,9 +459,9 @@ int main(int argc, char *argv[]) {
 	Screen *s;
 	Window r, w, f;
 	XColor sc;
-	char *font = "-*-*-medium-r-*-*-18-*-*-*-m-*-iso10646-1";
+	char *font = FONT;
 	struct WindowParameters wp, fp;
-	char *wmname = "multiselect";
+	char *wmname = WMNAME;
 	XSetWindowAttributes swa;
 
 	Time t;
