@@ -475,12 +475,18 @@ int main(int argc, char *argv[]) {
 	int ret, pret;
 	int key;
 
+	int daemon = 0;
 	char **buffers, separator, *terminator;
 	int a, num, size = 9;
 
 				/* parse arguments */
 
-	if (argc - 1 >=1 && ! strncmp(argv[1], "-t", sizeof("-t") - 1)) {
+	if (argc - 1 >= 1 && ! strcmp(argv[1], "-d")) {
+		daemon = 1;
+		argc--;
+		argv++;
+	}
+	else if (argc - 1 >= 1 && ! strncmp(argv[1], "-t", sizeof("-t") - 1)) {
 		if (argv[1][sizeof("-t") - 1] != '\0')
 			separator = argv[1][2];
 		else {
@@ -743,20 +749,27 @@ int main(int argc, char *argv[]) {
 						num--;
 						free(buffers[num]);
 					}
+					if (num > 0)
+						break;
+					// retain the selection if num==1 since
+					// the previous owner has already lost
+					// it at this point
+					XSetSelectionOwner(d, XA_PRIMARY,
+						None, CurrentTime);
 					break;
 				case 'd':
+				case 'q':
 					printf("delete all selections\n");
 					for (a = 0; a < num; a++)
 						free(buffers[a]);
 					num = 0;
-					break;
-				case 'q':
-					exitnext = True;
-					// disown selection so that the
-					// requestor will not ask for it again
-					// with a different conversion
+					// disown selection even when exiting
+					// to avoid the requestor to ask it
+					// again with a different conversion
 					XSetSelectionOwner(d, XA_PRIMARY,
 						None, CurrentTime);
+					if (k == 'q' && ! daemon)
+						exitnext = True;
 					break;
 				}
 			}

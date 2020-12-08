@@ -12,6 +12,7 @@ multiselect - a multiple selections server for X11
 .SH SYNOPSIS
 
 .B multiselect
+[\fI-d\fP]
 [\fI-t sep\fP]
 [-|\fIstring ...\fP]
 
@@ -39,7 +40,8 @@ adding them at run-time with ctrl-shift-z
 When the user pastes (e.g., by middle-clicking), these strings are shown.
 Pressing '1' causes the first to be pasted, '2' the second, '3' the third and
 so on. Pressing 's' deletes the last string, 'd' deletes all of them. Every
-other key causes no string to be pasted. Key 'q' terminates \fImultiselect\fP.
+other key causes no string to be pasted. Key 'q' terminates \fImultiselect\fP
+unless the option \fI-d\fP was given.
 
 Only up to nine strings at time can be selected.
 
@@ -131,6 +133,10 @@ press ctrl-shift-z.
 The strings are now ready to be pasted: middle-click on the text field for the
 name and press '1', middle-click on the field for the address and press '2',
 middle-click on the field for the city and press '3', as above.
+
+Option \fI-d\fP keeps multiselect running even after pressing 'q'. It is
+intended to keep multiselect running in the background all time and activating
+upon ctrl-shift-z.
 
 .
 .
