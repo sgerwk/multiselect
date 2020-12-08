@@ -704,6 +704,10 @@ int main(int argc, char *argv[]) {
 				e.xselection.selection, e.xselection.target);
 			if (buffers[num] != NULL)
 				num++;
+			if (num >=2 && AcquirePrimarySelection(d, r, w, &t)) {
+				XCloseDisplay(d);
+				return EXIT_FAILURE;
+			}
 
 			WindowAtPointer(d, f);
 			ResizeWindow(d, f, wp.fs, num);
@@ -720,10 +724,6 @@ int main(int argc, char *argv[]) {
 					XConvertSelection(d, XA_PRIMARY,
 						XA_STRING, XA_PRIMARY,
 						w, CurrentTime);
-				if (AcquirePrimarySelection(d, r, w, &t)) {
-					XCloseDisplay(d);
-					return EXIT_FAILURE;
-				}
 				break;
 			}
 			if (! pending) {
