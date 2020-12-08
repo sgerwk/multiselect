@@ -475,28 +475,27 @@ int main(int argc, char *argv[]) {
 	int ret, pret;
 	int key;
 
+	int opt;
 	int daemon = 0;
 	char **buffers, separator, *terminator;
 	int a, num, size = 9;
 
 				/* parse arguments */
 
-	if (argc - 1 >= 1 && ! strcmp(argv[1], "-d")) {
-		daemon = 1;
-		argc--;
-		argv++;
-	}
-	else if (argc - 1 >= 1 && ! strncmp(argv[1], "-t", sizeof("-t") - 1)) {
-		if (argv[1][sizeof("-t") - 1] != '\0')
-			separator = argv[1][2];
-		else {
-			argc--;
-			argv++;
-			separator = argv[1][0];
+	while (-1 != (opt = getopt(argc, argv, "dt:"))) {
+		switch (opt) {
+		case 'd':
+			daemon = 1;
+			break;
+		case 't':
+			separator = optarg[0];
+			break;
+		default:
+			exit(EXIT_FAILURE);
 		}
-		argc--;
-		argv++;
 	}
+	argc -= optind - 1;
+	argv += optind - 1;
 	if (argc - 1 == 1 && ! strcmp(argv[1], "-")) {
 		printf("reading selections from stdin\n");
 		buffers = malloc(size * sizeof(char *));
