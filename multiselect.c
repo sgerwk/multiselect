@@ -116,6 +116,7 @@
  */
 #define FONT "-*-*-medium-r-*-*-18-*-*-*-m-*-iso10646-1"
 #define WMNAME "multiselect"
+#define WMNAMEDAEMON "multiselectd"
 
 /*
  * check the existence of a window with a certain name
@@ -461,7 +462,6 @@ int main(int argc, char *argv[]) {
 	XColor sc;
 	char *font = FONT;
 	struct WindowParameters wp, fp;
-	char *wmname = WMNAME;
 	XSetWindowAttributes swa;
 
 	Time t;
@@ -476,7 +476,7 @@ int main(int argc, char *argv[]) {
 	int key;
 
 	int opt;
-	int daemon = 0;
+	int daemon = 0, daemonother;
 	char **buffers, separator, *terminator;
 	int a, num, size = 9;
 
@@ -496,7 +496,12 @@ int main(int argc, char *argv[]) {
 	}
 	argc -= optind - 1;
 	argv += optind - 1;
-	if (argc - 1 == 1 && ! strcmp(argv[1], "-")) {
+	if (daemon && argc - 1 != 0) {
+		printf("daemon mode: ");
+		printf("no string allowed from the command line\n");
+		exit(EXIT_FAILURE);
+	}
+	else if (argc - 1 == 1 && ! strcmp(argv[1], "-")) {
 		printf("reading selections from stdin\n");
 		buffers = malloc(size * sizeof(char *));
 		for (num = 0; num < 9; num++) {
@@ -526,13 +531,18 @@ int main(int argc, char *argv[]) {
 	}
 	s = DefaultScreenOfDisplay(d);
 	r = DefaultRootWindow(d);
-	if (WindowNameExists(d, r, wmname)) {
-		printf("%s already running\n", wmname);
+
+				/* run or not, daemon or not */
+
+	daemonother = WindowNameExists(d, r, WMNAMEDAEMON);
+	if (WindowNameExists(d, r, WMNAME) || (daemon && daemonother)) {
+		printf("%s already running\n", WMNAME);
 		XCloseDisplay(d);
 		exit(EXIT_FAILURE);
 	}
-	XGrabKey(d, XKeysymToKeycode(d, XK_z), ControlMask | ShiftMask,
-		r, False, GrabModeAsync, GrabModeAsync);
+	if (daemon || ! daemonother)
+		XGrabKey(d, XKeysymToKeycode(d, XK_z), ControlMask | ShiftMask,
+			r, False, GrabModeAsync, GrabModeAsync);
 
 				/* create the window, set font and input */
 
@@ -542,7 +552,7 @@ int main(int argc, char *argv[]) {
 		CopyFromParent, CopyFromParent, CopyFromParent,
 		CWBackPixel | CWOverrideRedirect, &swa);
 	printf("selection window: 0%lx\n", w);
-	XStoreName(d, w, wmname);
+	XStoreName(d, w, daemon ? WMNAMEDAEMON : WMNAME);
 
 	XSelectInput(d, w, ExposureMask | StructureNotifyMask | \
 		KeyPressMask | PropertyChangeMask);
@@ -807,6 +817,8 @@ int main(int argc, char *argv[]) {
 			if (exitnext)
 				break;
 			XUngrabPointer(d, CurrentTime);
+			if (! daemon && daemonother)
+				stayinloop = 0;
 			break;
 
 		case PropertyNotify:
