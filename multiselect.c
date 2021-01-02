@@ -745,7 +745,8 @@ int main(int argc, char *argv[]) {
 				printf("no pending request\n");
 				break;
 			}
-			if ((int) k - '1' >= 0 && (int) k - '1' < num) {
+			if ((int) k - '1' >= 0 && (int) k - '1' < num &&
+			    request.requestor != w) {
 				key = k - '1';
 				printf("pasting %s\n", buffers[key]);
 			}
