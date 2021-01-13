@@ -321,22 +321,24 @@ Bool SendSelection(Display *d, Time t, XSelectionRequestEvent *re,
 
 				/* store the selection or the targets */
 
-	printf("storing selection: %s\n", chars);
 	if (re->target == XInternAtom(d, "TARGETS", True)) {
 		targetlen = 0;
 		targetlist[targetlen++] = XInternAtom(d, "STRING", True);
 		if (! stringonly)
 			targetlist[targetlen++] =
 				XInternAtom(d, "UTF8_STRING", True);
+		printf("storing selection TARGETS\n");
 		XChangeProperty(d, re->requestor, re->property, // re->target,
 			XInternAtom(d, "ATOM", True), 32,
 			PropModeReplace,
 			(unsigned char *) &targetlist, targetlen);
 	}
-	else
+	else {
+		printf("storing selection: %s\n", chars);
 		XChangeProperty(d, re->requestor, re->property, re->target, 8,
 			PropModeReplace,
 			(unsigned char *) chars, nchars);
+	}
 
 				/* send notification */
 
@@ -551,7 +553,7 @@ int main(int argc, char *argv[]) {
 	w = XCreateWindow(d, r, 0, 0, 1, 1, 1,
 		CopyFromParent, CopyFromParent, CopyFromParent,
 		CWBackPixel | CWOverrideRedirect, &swa);
-	printf("selection window: 0%lx\n", w);
+	printf("selection window: 0x%lx\n", w);
 	XStoreName(d, w, daemon ? WMNAMEDAEMON : WMNAME);
 
 	XSelectInput(d, w, ExposureMask | StructureNotifyMask | \
@@ -562,7 +564,7 @@ int main(int argc, char *argv[]) {
 	f = XCreateWindow(d, r, 0, 0, 50, 10, 1,
 		CopyFromParent, CopyFromParent, CopyFromParent,
 		CWBackPixel | CWOverrideRedirect, &swa);
-	printf("flash window: 0%lx\n", f);
+	printf("flash window: 0x%lx\n", f);
 	XSelectInput(d, f, ExposureMask);
 
 				/* print strings and instructions */
