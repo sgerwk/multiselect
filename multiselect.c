@@ -154,9 +154,12 @@ Bool ShortTime(struct timeval *last, int interval, Bool store) {
 	ret = now.tv_usec + 1000000 * (now.tv_sec - last->tv_sec)
 	      <= last->tv_usec + interval;
 
-	if (store)
+	if (store) {
+		printf("shorttime: %s ", ret ? "True" : "False");
+		printf("(%ld,%ld -> ", last->tv_sec % 60, last->tv_usec);
+		printf("%ld,%ld)\n", now.tv_sec % 60, now.tv_usec);
 		*last = now;
-	printf("shorttime: %s\n", ret ? "True" : "False");
+	}
 	return ret;
 }
 
