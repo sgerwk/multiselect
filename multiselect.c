@@ -471,7 +471,7 @@ int main(int argc, char *argv[]) {
 
 	Time t;
 	struct timeval last, flashtime;
-	int interval = 50000;
+	int interval = 80000;
 	Bool exitnext, stayinloop, pending, firefox;
 	XEvent e;
 	XSelectionRequestEvent *re, request;
