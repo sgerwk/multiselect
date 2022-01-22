@@ -423,7 +423,7 @@ struct WindowParameters {
  * draw the window
  */
 void draw(Display *d, Window w, struct WindowParameters *wp,
-		char *buffers[], int n) {
+		char *buffers[], int n, int selected) {
 	Window r;
 	int x, y;
 	unsigned int width, height, bw, depth, nwidth;
@@ -432,14 +432,25 @@ void draw(Display *d, Window w, struct WindowParameters *wp,
 	char num[10], help[] = "multiselect";
 
 	XClearWindow(d, w);
-	XSetBackground(d, wp->g, wp->white);
-	XSetForeground(d, wp->g, wp->black);
 	XGetGeometry(d, w, &r, &x, &y, &width, &height, &bw, &depth);
 
 	interline = wp->fs->ascent + wp->fs->descent;
 	lpos = wp->fs->ascent;
 
 	for (i = -1; i < n; i++) {
+		XSetBackground(d, wp->g, wp->white);
+		XSetForeground(d, wp->g, wp->black);
+		if (i != selected)
+			XDrawLine(d, w, wp->g,
+				0, lpos + wp->fs->descent,
+				width, lpos + wp->fs->descent);
+		else {
+			XFillRectangle(d, w, wp->g,
+				0, lpos - wp->fs->ascent,
+				width, interline);
+			XSetBackground(d, wp->g, wp->black);
+			XSetForeground(d, wp->g, wp->white);
+		}
 		if (i == -1)
 			XDrawString(d, w, wp->g, 0, lpos,
 				help, MIN(sizeof(help) - 1, 100));
@@ -450,9 +461,6 @@ void draw(Display *d, Window w, struct WindowParameters *wp,
 			XDrawString(d, w, wp->g, nwidth, lpos,
 				buffers[i], MIN(strlen(buffers[i]), 100));
 		}
-		XDrawLine(d, w, wp->g,
-			0, lpos + wp->fs->descent,
-			width, lpos + wp->fs->descent);
 		lpos += interline;
 	}
 }
@@ -477,6 +485,7 @@ int main(int argc, char *argv[]) {
 	XSelectionRequestEvent *re, request;
 	KeySym k;
 	Window prev, pprev;
+	int selected;
 	int ret, pret;
 	int key;
 
@@ -609,13 +618,14 @@ int main(int argc, char *argv[]) {
 	last.tv_sec = 0;
 	last.tv_usec = 0;
 	key = 0;
+	selected = 0;
 
 	for (stayinloop = True, exitnext = False; stayinloop;) {
 		XNextEvent(d, &e);
 
 		if (e.type == Expose && e.xexpose.window == f) {
 			printf("expose on the flash window\n");
-			draw(d, f, &fp, buffers, num);
+			draw(d, f, &fp, buffers, num, selected);
 			XFlush(d);
 			usleep(500000);
 			XUnmapWindow(d, f);
@@ -706,7 +716,7 @@ int main(int argc, char *argv[]) {
 
 		case Expose:
 			printf("expose\n");
-			draw(d, w, &wp, buffers, num);
+			draw(d, w, &wp, buffers, num, selected);
 			XSetInputFocus(d, w, RevertToNone, CurrentTime);
 			// grab pointer to disallow the other client from
 			// making further requests
@@ -754,6 +764,19 @@ int main(int argc, char *argv[]) {
 			    request.requestor != w) {
 				key = k - '1';
 				printf("pasting %s\n", buffers[key]);
+			}
+			else if (k == XK_Up || k == XK_Down) {
+				if (num == 0)
+					break;
+				selected = selected + (k == XK_Up ? -1 : +1);
+				selected = (selected + num) % num;
+				XClearArea(d, w, 0, 0, 0, 0, True);
+				break;
+			}
+			else if (k == XK_Return) {
+				if (num == 0)
+					break;
+				key = selected;
 			}
 			else {
 				key = -1;

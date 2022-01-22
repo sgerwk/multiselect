@@ -18,7 +18,8 @@ and middle-clicking on the second field of a web form, the state is this:
 
 ![multiselect screenshot](multiselect.png)
 
-the user can click '2' to have ``Smith`` pasted.
+the user can click '2' to have ``Smith`` pasted. Alternatively, the string to
+paste can be chosen by moving down with cursor keys and pressing Enter.
 
 ## example: pasting tabular data from a file
 
