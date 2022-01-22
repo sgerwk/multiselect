@@ -490,7 +490,7 @@ int main(int argc, char *argv[]) {
 	int key;
 
 	int opt;
-	int daemon = 0, daemonother;
+	Bool daemon = False, daemonother;
 	char **buffers, separator, *terminator;
 	int a, num, size = 9;
 
@@ -499,7 +499,7 @@ int main(int argc, char *argv[]) {
 	while (-1 != (opt = getopt(argc, argv, "dt:"))) {
 		switch (opt) {
 		case 'd':
-			daemon = 1;
+			daemon = True;
 			break;
 		case 't':
 			separator = optarg[0];
