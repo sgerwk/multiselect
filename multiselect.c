@@ -491,15 +491,19 @@ int main(int argc, char *argv[]) {
 
 	int opt;
 	Bool daemon = False, daemonother;
+	Bool immediate = False;
 	char **buffers, separator, *terminator;
 	int a, num, size = 9;
 
 				/* parse arguments */
 
-	while (-1 != (opt = getopt(argc, argv, "dt:"))) {
+	while (-1 != (opt = getopt(argc, argv, "dit:"))) {
 		switch (opt) {
 		case 'd':
 			daemon = True;
+			break;
+		case 'i':
+			immediate = True;
 			break;
 		case 't':
 			separator = optarg[0];
@@ -618,7 +622,7 @@ int main(int argc, char *argv[]) {
 	last.tv_sec = 0;
 	last.tv_usec = 0;
 	key = 0;
-	selected = 0;
+	selected = -1;
 
 	for (stayinloop = True, exitnext = False; stayinloop;) {
 		XNextEvent(d, &e);
@@ -770,11 +774,15 @@ int main(int argc, char *argv[]) {
 					break;
 				selected = selected + (k == XK_Up ? -1 : +1);
 				selected = (selected + num) % num;
-				XClearArea(d, w, 0, 0, 0, 0, True);
-				break;
+				if (immediate)
+					key = selected;
+				else {
+					XClearArea(d, w, 0, 0, 0, 0, True);
+					break;
+				}
 			}
 			else if (k == XK_Return) {
-				if (num == 0)
+				if (num == 0 || selected == -1)
 					break;
 				key = selected;
 			}
@@ -810,6 +818,8 @@ int main(int argc, char *argv[]) {
 						exitnext = True;
 					break;
 				}
+				if (selected >= num)
+					selected = num - 1;
 			}
 
 			ShortTime(&last, interval, True);

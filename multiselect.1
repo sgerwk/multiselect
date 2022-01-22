@@ -13,6 +13,7 @@ multiselect - a multiple selections server for X11
 
 .B multiselect
 [\fI-d\fP]
+[\fI-i\fP]
 [\fI-t sep\fP]
 [-|\fIstring ...\fP]
 
@@ -46,6 +47,9 @@ other key causes no string to be pasted. Key 'q' terminates \fImultiselect\fP
 unless the option \fI-d\fP was given.
 
 Only up to nine strings at time can be selected.
+
+Option \fI-i\fP makes the next or previous string to be pasted immediately
+after pressing the up and down cursor keys, without the need to press 'Enter'.
 
 Option \fI-t sep\fP makes everything up to the first \fIsep\fP character in
 each string displayed in the menu but not pasted (see \fILABELS\fP, below).

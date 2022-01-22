@@ -58,9 +58,10 @@ The result is:
 
 The data of the first person is ready: to paste the name, middle-click on the
 textfield for the name in the web form and press '1'. For the surname,
-middle-click on the textfield for the surname and press '2', and so on. When
-the form is full and submitted, a further middle-click followed by key 'q'
-terminates ``multiselect`` so that the script proceeds to the second line.
+middle-click on the textfield for the surname and press '2', and so on.
+Alternatively, go down with cursor keys and press 'Return', When the form is
+full and submitted, a further middle-click followed by key 'q' terminates
+``multiselect`` so that the script proceeds to the second line.
 
 ## example: pasting multiple strings selected interactively
 
