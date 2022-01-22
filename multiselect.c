@@ -724,7 +724,7 @@ int main(int argc, char *argv[]) {
 				e.xselection.selection, e.xselection.target);
 			if (buffers[num] != NULL)
 				num++;
-			if (num >=2 && AcquirePrimarySelection(d, r, w, &t)) {
+			if (num >= 2 && AcquirePrimarySelection(d, r, w, &t)) {
 				XCloseDisplay(d);
 				return EXIT_FAILURE;
 			}
