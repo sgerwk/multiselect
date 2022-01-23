@@ -451,9 +451,15 @@ void draw(Display *d, Window w, struct WindowParameters *wp,
 			XSetBackground(d, wp->g, wp->black);
 			XSetForeground(d, wp->g, wp->white);
 		}
-		if (i == -1)
+		if (i == -1) {
 			XDrawString(d, w, wp->g, 0, lpos,
 				help, MIN(sizeof(help) - 1, 100));
+			XFillRectangle(d, w, wp->g,
+				width - interline - 1,
+				lpos - wp->fs->ascent + 1,
+				interline,
+				lpos + wp->fs->descent - 3);
+		}
 		else {
 			sprintf(num, "%d ", i + 1);
 			XDrawString(d, w, wp->g, 0, lpos, num, strlen(num));
@@ -485,6 +491,8 @@ int main(int argc, char *argv[]) {
 	XSelectionRequestEvent *re, request;
 	KeySym k;
 	Window prev, pprev;
+	XWindowAttributes wa;
+	int il;
 	int selected;
 	int ret, pret;
 	int key;
@@ -562,7 +570,7 @@ int main(int argc, char *argv[]) {
 		XGrabKey(d, XKeysymToKeycode(d, XK_z), ControlMask | ShiftMask,
 			r, False, GrabModeAsync, GrabModeAsync);
 
-				/* create the window, set font and input */
+				/* create the window and select input */
 
 	swa.background_pixel = WhitePixelOfScreen(s);
 	swa.override_redirect = True;
@@ -573,7 +581,7 @@ int main(int argc, char *argv[]) {
 	XStoreName(d, w, daemon ? WMNAMEDAEMON : WMNAME);
 
 	XSelectInput(d, w, ExposureMask | StructureNotifyMask | \
-		KeyPressMask | PropertyChangeMask);
+		KeyPressMask | ButtonPressMask | PropertyChangeMask);
 
 				/* flash window */
 
@@ -820,6 +828,22 @@ int main(int argc, char *argv[]) {
 				}
 				if (selected >= num)
 					selected = num - 1;
+			}
+
+			/* fallthrough */
+
+		case ButtonPress:
+			if (e.type == ButtonPress) {
+				printf("button press\n");
+				printf("x=%d y=%d\n",
+					e.xbutton.x, e.xbutton.y);
+				il = wp.fs->ascent + wp.fs->descent;
+				key = e.xbutton.y / il - 1;
+				if (key == -1 && ! daemon) {
+					XGetWindowAttributes(d, w, &wa);
+					if (e.xbutton.x >= wa.width - il)
+						exitnext = True;
+				}
 			}
 
 			ShortTime(&last, interval, True);
