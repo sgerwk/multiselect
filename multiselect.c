@@ -6,9 +6,6 @@
 
 /*
  * todo:
- * - allow to choose the string to send by the mouse (right click to refuse);
- *   make a subwindow for every string that can be pasted, use events of type
- *   XCrossingEvent to detect enter/leave, for hightlighting and chosing
  * - allow for more than 9 strings, with keys a,b,c,...
  * - the current selections can only be shown and changed when another
  *   program tries to paste one; some programs can copy text but never paste
@@ -59,6 +56,25 @@
  */
 
 /*
+ * sending a middle button click
+ *
+ * some programs ignore selection notify events if they arrive past a certain
+ * time after they requested the selection; sending the selection to them has
+ * no effect
+ *
+ * the solution is to simulate a middle button click when the user chooses a
+ * string; this typically causes the program that requested the selection to do
+ * that again; this request is served immediately; all other requests are
+ * refused; the position of the pointer has to be saved and restored, as
+ * otherwise the click would be in a different position
+ *
+ * since middle button clicks do not mandate pasting, another mechanism can be
+ * employed: when the user chooses a string, it is sent to the requestor
+ * immediately; this behaviour is activated when the boolean variable 'click'
+ * is false (option -p)
+ */
+
+/*
  * firefox
  *
  * the problem with firefox is that due to bad programming, it asks for the
@@ -71,16 +87,7 @@
  * its timeout expires; to facilitate the user, the next time a selection is
  * requested, the previous string chosen is sent again
  *
- * an alternative that is also consistent with this is to send a middle-click
- * to the requestor window after unmapping the window; this should causes
- * firefox to ask the selection again, which is served immediately; this
- * mechanism requires the current pointer coordinates to be saved and restored
- * before sending the middle click, and relies on it not moving too much
- * between the original click and the moment this program receives the
- * selection request
- *
- * an alternative solution is a preload library for increasing the timeout in a
- * select system call
+ * this is only done when the selection is sent immediately (option -p)
  */
 
 /*
@@ -108,6 +115,7 @@
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
 #include <X11/keysym.h>
+#include <X11/extensions/XTest.h>
 
 #define MIN(a,b) (((a) < (b)) ? (a) : (b))
 
@@ -486,7 +494,7 @@ int main(int argc, char *argv[]) {
 	Time t;
 	struct timeval last, flashtime;
 	int interval = 80000;
-	Bool exitnext, stayinloop, pending, firefox;
+	Bool exitnext, stayinloop, pending, firefox, chosen;
 	XEvent e;
 	XSelectionRequestEvent *re, request;
 	KeySym k;
@@ -496,22 +504,27 @@ int main(int argc, char *argv[]) {
 	int selected;
 	int ret, pret;
 	int key;
+	int x, y;
 
 	int opt;
 	Bool daemon = False, daemonother;
 	Bool immediate = False;
+	Bool click = True;
 	char **buffers, separator, *terminator;
 	int a, num, size = 9;
 
 				/* parse arguments */
 
-	while (-1 != (opt = getopt(argc, argv, "dit:"))) {
+	while (-1 != (opt = getopt(argc, argv, "dipt:"))) {
 		switch (opt) {
 		case 'd':
 			daemon = True;
 			break;
 		case 'i':
 			immediate = True;
+			break;
+		case 'p':
+			click = False;
 			break;
 		case 't':
 			separator = optarg[0];
@@ -581,7 +594,7 @@ int main(int argc, char *argv[]) {
 	XStoreName(d, w, daemon ? WMNAMEDAEMON : WMNAME);
 
 	XSelectInput(d, w, ExposureMask | StructureNotifyMask | \
-		KeyPressMask | ButtonPressMask | PropertyChangeMask);
+		KeyPressMask | ButtonReleaseMask | PropertyChangeMask);
 
 				/* flash window */
 
@@ -625,6 +638,7 @@ int main(int argc, char *argv[]) {
 				/* main loop */
 
 	pending = False;
+	chosen = False;
 	firefox = False;
 	prev = None;
 	last.tv_sec = 0;
@@ -663,7 +677,7 @@ int main(int argc, char *argv[]) {
 
 					/* request from firefox */
 
-			if (re->target == XInternAtom(d,
+			if (! click && re->target == XInternAtom(d,
 					"text/x-moz-text-internal", True)) {
 				printf("\nWARNING: request from firefox\n");
 				printf("\ttimeout expired: 1/2 second\n");
@@ -679,10 +693,10 @@ int main(int argc, char *argv[]) {
 				break;
 			}
 
-					/* pending request */
+					/* window is on screen */
 
 			if (pending) {
-				printf("pending request, refusing this\n");
+				printf("window on screen, refusing request\n");
 				RefuseSelection(d, re);
 				break;
 			}
@@ -698,12 +712,24 @@ int main(int argc, char *argv[]) {
 				break;
 			}
 
+					/* a string was chosen */
+
+			if (click && chosen) {
+				printf("request after choice, sending\n");
+				chosen = False;
+				AnswerSelection(d, t, re,
+					buffers, separator, key, False);
+				ShortTime(&last, interval, True);
+				break;
+			}
+
 					/* request in a short time */
 
-			if (ShortTime(&last, interval, True)) {
+			if (ShortTime(&last, interval, False)) {
 				printf("short time, repeating answer\n");
 				AnswerSelection(d, t, re,
 					buffers, separator, key, False);
+				ShortTime(&last, interval, True);
 				break;
 			}
 
@@ -718,6 +744,11 @@ int main(int argc, char *argv[]) {
 
 					/* store request and map window */
 
+			if (click) {
+				PointerPosition(d, r, &x, &y);
+				printf("x=%d y=%d\n", x, y);
+				RefuseSelection(d, re);
+			}
 			request = *re;
 			pending = True;
 			ResizeWindow(d, w, wp.fs, num);
@@ -789,7 +820,7 @@ int main(int argc, char *argv[]) {
 					break;
 				}
 			}
-			else if (k == XK_Return) {
+			else if (k == XK_Return || k == XK_KP_Enter) {
 				if (num == 0 || selected == -1)
 					break;
 				key = selected;
@@ -832,8 +863,8 @@ int main(int argc, char *argv[]) {
 
 			/* fallthrough */
 
-		case ButtonPress:
-			if (e.type == ButtonPress) {
+		case ButtonRelease:
+			if (e.type == ButtonRelease) {
 				printf("button press\n");
 				printf("x=%d y=%d\n",
 					e.xbutton.x, e.xbutton.y);
@@ -846,10 +877,6 @@ int main(int argc, char *argv[]) {
 				}
 			}
 
-			ShortTime(&last, interval, True);
-			AnswerSelection(d, t, &request,
-				buffers, separator, key, False);
-			pending = False;
 			XUnmapWindow(d, w);
 			// -> UnmapNotify
 			break;
@@ -867,11 +894,26 @@ int main(int argc, char *argv[]) {
 			XGetInputFocus(d, &pprev, &pret);
 			printf("revert focus 0x%lX -> 0x%lX\n", pprev, prev);
 			XSetInputFocus(d, prev, ret, CurrentTime);
-			XUngrabPointer(d, CurrentTime);
 			prev = None;
+			XUngrabPointer(d, CurrentTime);
 			if (exitnext) {
 				printf("exiting\n");
 				stayinloop =  False;
+				break;
+			}
+			pending = False;
+			ShortTime(&last, interval, True);
+			if (! click) {
+				printf("sending selection\n");
+				AnswerSelection(d, t, &request,
+					buffers, separator, key, False);
+			}
+			else if (key != -1) {
+				printf("sending middle button click\n");
+				chosen = True;
+				XWarpPointer(d, None, r, 0, 0, 0, 0, x, y);
+				XTestFakeButtonEvent(d, 2, True, CurrentTime);
+				XTestFakeButtonEvent(d, 2, False, 100);
 			}
 			break;
 
