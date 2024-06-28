@@ -461,7 +461,7 @@ void draw(Display *d, Window w, struct WindowParameters *wp,
 	unsigned int width, height, bw, depth, nwidth;
 	int lpos, interline;
 	int i;
-	char num[10], help[] = "multiselect";
+	char num[12], help[] = "multiselect";
 
 	XClearWindow(d, w);
 	XGetGeometry(d, w, &r, &x, &y, &width, &height, &bw, &depth);
