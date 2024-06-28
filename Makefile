@@ -1,7 +1,7 @@
 PROGS=multiselect
 
 CFLAGS=-g -Wall -Wextra
-LDLIBS=-lX11
+LDLIBS=-lX11 -lXtst
 
 all: ${PROGS}
 
