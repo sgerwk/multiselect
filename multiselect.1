@@ -14,6 +14,8 @@ multiselect - a multiple selections server for X11
 .B multiselect
 [\fI-d\fP]
 [\fI-i\fP]
+[\fI-k\fP]
+[\fI-f\fP]
 [\fI-p\fP]
 [\fI-t sep\fP]
 [-|\fIstring ...\fP]
@@ -28,10 +30,10 @@ Store multiple strings the user can choose among when pasting.
 The strings can be given in three ways:
 
 .IP "  * " 4
-as the commandline arguments; e.g., \fImultiselect first second third\fP
+the commandline arguments; e.g., \fImultiselect first second third\fP
 
 .IP "  * "
-as lines of a text file passed to the program as its standard input:
+the lines of a text file passed as standard input:
 \fImultiselect - < file\fP
 
 .IP "  * "
@@ -53,6 +55,11 @@ after pressing the up and down cursor keys, without the need to press 'Enter'.
 
 Option \fI-t sep\fP makes everything up to the first \fIsep\fP character in
 each string displayed in the menu but not pasted (see \fILABELS\fP, below).
+
+Option \fI-k\fP disables the F1 key from opening the selection menu.
+Option \fI-f\fP enables sending the selection when the menu has been opened by
+a F1 keystroke; technically, this is achieved by sending a fake middle mouse
+click to the root window.
 
 .
 .

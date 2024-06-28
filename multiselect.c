@@ -120,6 +120,11 @@
 #define MIN(a,b) (((a) < (b)) ? (a) : (b))
 
 /*
+ * fake event to open the selection window
+ */
+#define ShowWindow LASTEvent
+
+/*
  * maximum number of strings
  */
 #define MAXNUM 20
@@ -537,7 +542,7 @@ int main(int argc, char *argv[]) {
 	Time t;
 	struct timeval last, flashtime;
 	int interval = 80000;
-	Bool exitnext, stayinloop, pending, firefox, chosen;
+	Bool exitnext, stayinloop, pending, showing, firefox, chosen;
 	XEvent e;
 	XSelectionRequestEvent *re, request;
 	KeySym k;
@@ -547,24 +552,31 @@ int main(int argc, char *argv[]) {
 	int selected;
 	int ret, pret;
 	int key;
-	int x, y;
+	int x, y, xb, yb;
 
 	int opt;
 	Bool daemon = False, daemonother;
 	Bool immediate = False;
 	Bool click = True;
+	Bool functionkey = True, force = False;
 	char **buffers, separator, *terminator;
 	int a, num;
 
 				/* parse arguments */
 
-	while (-1 != (opt = getopt(argc, argv, "dipt:"))) {
+	while (-1 != (opt = getopt(argc, argv, "dikfpt:"))) {
 		switch (opt) {
 		case 'd':
 			daemon = True;
 			break;
 		case 'i':
 			immediate = True;
+			break;
+		case 'k':
+			functionkey = False;
+			break;
+		case 'f':
+			force = True;
 			break;
 		case 'p':
 			click = False;
@@ -625,6 +637,9 @@ int main(int argc, char *argv[]) {
 	if (daemon || ! daemonother)
 		XGrabKey(d, XKeysymToKeycode(d, XK_z), ControlMask | ShiftMask,
 			r, False, GrabModeAsync, GrabModeAsync);
+	if (functionkey)
+		XGrabKey(d, XKeysymToKeycode(d, XK_F1), 0, r, False,
+			GrabModeAsync, GrabModeAsync);
 
 				/* create the window and select input */
 
@@ -681,6 +696,7 @@ int main(int argc, char *argv[]) {
 				/* main loop */
 
 	pending = False;
+	showing = False;
 	chosen = False;
 	firefox = False;
 	prev = None;
@@ -695,13 +711,30 @@ int main(int argc, char *argv[]) {
 		if (e.type == Expose && e.xexpose.window == f) {
 			printf("expose on the flash window\n");
 			draw(d, f, &fp, buffers, num, selected);
+			if (showing)
+				continue;
 			XFlush(d);
 			usleep(500000);
 			XUnmapWindow(d, f);
 			continue;
 		}
-		if (! ShortTime(&flashtime, 500000, False))
+		if (functionkey &&
+		    e.type == KeyPress &&
+		    XLookupKeysym(&e.xkey, 0) == XK_F1 &&
+		    ! pending) {
+			if (showing) {
+				XUnmapWindow(d, w);
+				// -> UnmapNotify
+				continue;
+			}
+			showing = True;
+			e.type = ShowWindow;
+			// -> ShowWindow
+		}
+		if (! ShortTime(&flashtime, 500000, False)) {
+			printf("short time expired, hiding flash window\n");
 			XUnmapWindow(d, f);
+		}
 
 		switch (e.type) {
 		case SelectionRequest:
@@ -776,6 +809,27 @@ int main(int argc, char *argv[]) {
 				break;
 			}
 
+					/* send middle-click, not selection */
+
+			if (click)
+				RefuseSelection(d, re);
+
+					/* store request */
+
+			request = *re;
+			pending = True;
+
+			/* fallthrough */
+
+		case ShowWindow:
+
+					/* position for later middle-click */
+
+			if (click) {
+				PointerPosition(d, r, &x, &y);
+				printf("saved x=%d y=%d\n", x, y);
+			}
+
 					/* save focus window */
 
 			XGetInputFocus(d, &pprev, &pret);
@@ -785,15 +839,8 @@ int main(int argc, char *argv[]) {
 				printf("previous focus: 0x%lX\n", prev);
 			}
 
-					/* store request and map window */
+					/* map window */
 
-			if (click) {
-				PointerPosition(d, r, &x, &y);
-				printf("x=%d y=%d\n", x, y);
-				RefuseSelection(d, re);
-			}
-			request = *re;
-			pending = True;
 			ResizeWindow(d, w, wp.fs, num);
 			WindowAtPointer(d, w);
 			XMapRaised(d, w);
@@ -829,20 +876,26 @@ int main(int argc, char *argv[]) {
 			ResizeWindow(d, f, wp.fs, num);
 			XMapRaised(d, f);
 			ShortTime(&flashtime, 0, True);
+			// -> Expose on the flash window
 			break;
 
 		case KeyPress:
 			printf("key: %d\n", e.xkey.keycode);
 			k = XLookupKeysym(&e.xkey, 0);
-			if (e.xkey.window == r && k == 'z') {
-				printf("add new selection\n");
-				if (num >= MAXNUM)
+			if (e.xkey.window == r && ! pending) {
+				switch (k) {
+				case 'z':
+					printf("add new selection\n");
+					if (num >= MAXNUM)
+						break;
 					XConvertSelection(d, XA_PRIMARY,
-						XA_STRING, XA_PRIMARY,
-						w, CurrentTime);
-				break;
+						XA_STRING, XA_PRIMARY, w,
+						CurrentTime);
+					// -> SelectionNotify
+					break;
+				}
 			}
-			if (! pending) {
+			if (! pending && k != 'q' && ! (showing && force)) {
 				printf("no pending request\n");
 				break;
 			}
@@ -902,23 +955,25 @@ int main(int argc, char *argv[]) {
 					selected = num - 1;
 			}
 
-			/* fallthrough */
+			XUnmapWindow(d, e.xbutton.window);
+			// -> UnmapNotify
+			break;
 
 		case ButtonRelease:
-			if (e.type == ButtonRelease) {
-				printf("button press\n");
-				printf("x=%d y=%d\n",
-					e.xbutton.x, e.xbutton.y);
-				il = wp.fs->ascent + wp.fs->descent;
-				key = e.xbutton.y / il - 1;
-				if (key == -1 && ! daemon) {
-					XGetWindowAttributes(d, w, &wa);
-					if (e.xbutton.x >= wa.width - il)
-						exitnext = True;
-				}
+			printf("button release\n");
+			xb = e.xbutton.x;
+			yb = e.xbutton.y;
+			printf("x=%d y=%d\n", xb, yb);
+			il = wp.fs->ascent + wp.fs->descent;
+			key = yb / il - 1;
+			if (key == -1 && ! daemon) {
+				XGetWindowAttributes(d,
+					e.xbutton.window, &wa);
+				if (xb >= wa.width - il)
+					exitnext = True;
 			}
 
-			XUnmapWindow(d, w);
+			XUnmapWindow(d, e.xbutton.window);
 			// -> UnmapNotify
 			break;
 
@@ -928,21 +983,27 @@ int main(int argc, char *argv[]) {
 
 		case UnmapNotify:
 			printf("unmap\n");
-			if (prev == None && ! exitnext) {
-				XUngrabPointer(d, CurrentTime);
-				break;
+			if (prev != None) {
+				XGetInputFocus(d, &pprev, &pret);
+				printf("revert focus 0x%lX -> 0x%lX\n",
+					pprev, prev);
+				XSetInputFocus(d, prev, ret, CurrentTime);
+				prev = None;
 			}
-			XGetInputFocus(d, &pprev, &pret);
-			printf("revert focus 0x%lX -> 0x%lX\n", pprev, prev);
-			XSetInputFocus(d, prev, ret, CurrentTime);
-			prev = None;
 			XUngrabPointer(d, CurrentTime);
 			if (exitnext) {
 				printf("exiting\n");
-				stayinloop =  False;
+				stayinloop = False;
 				break;
 			}
-			pending = False;
+			if (pending || (showing && force)) {
+				showing = False;
+				pending = False;
+			}
+			else {
+				showing = False;
+				break;
+			}
 			ShortTime(&last, interval, True);
 			if (! click) {
 				printf("sending selection\n");
@@ -952,6 +1013,8 @@ int main(int argc, char *argv[]) {
 			else if (key != -1) {
 				printf("sending middle button click\n");
 				chosen = True;
+
+				printf("restore x=%d y=%d\n", x, y);
 				XWarpPointer(d, None, r, 0, 0, 0, 0, x, y);
 				XTestFakeButtonEvent(d, 2, True, CurrentTime);
 				XTestFakeButtonEvent(d, 2, False, 100);
