@@ -214,9 +214,12 @@ void WindowAtPointer(Display *d, Window w) {
 		x = border;
 	if (x + width >= rwidth)
 		x = rwidth - width - 2 * border;
-	y = y + 10 + height + 2 * border < rheight ?
-		y + 10 :
-		y - 10 - (int) height;
+	if (y + 10 + height + 2 * border < rheight)
+		y = y + 10;
+	else if (y - 10 - (int) height > 10)
+		y = y - 10 - (int) height;
+	else
+		y = rheight - 10 - (int) height;
 
 	XMoveWindow(d, w, x, y);
 }
@@ -472,7 +475,7 @@ void draw(Display *d, Window w, struct WindowParameters *wp,
 	for (i = -1; i < n; i++) {
 		XSetBackground(d, wp->g, wp->white);
 		XSetForeground(d, wp->g, wp->black);
-		if (i != selected)
+		if (i != selected && i != -1)
 			XDrawLine(d, w, wp->g,
 				0, lpos + wp->fs->descent,
 				width, lpos + wp->fs->descent);
@@ -491,6 +494,19 @@ void draw(Display *d, Window w, struct WindowParameters *wp,
 				lpos - wp->fs->ascent + 1,
 				interline,
 				lpos + wp->fs->descent - 3);
+			XSetForeground(d, wp->g, wp->black);
+			XSetLineAttributes(d, wp->g, 5,
+				LineSolid, CapRound, JoinMiter);
+			x = width - 6;
+			y = lpos;
+			XDrawLine(d, w, wp->g,
+				x - interline + 8, y,
+				x, y - wp->fs->ascent + 5);
+			XDrawLine(d, w, wp->g,
+				x - interline + 8, y - wp->fs->ascent + 5,
+				x, y);
+			XSetLineAttributes(d, wp->g, 1,
+				LineSolid, CapButt, JoinMiter);
 		}
 		else {
 			if (i + 1 < 10)
