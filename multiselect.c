@@ -6,11 +6,11 @@
 
 /*
  * todo:
- * - allow for more than 9 strings, with keys a,b,c,...
  * - the current selections can only be shown and changed when another
  *   program tries to paste one; some programs can copy text but never paste
  *   it (e.g., pdf viewers) or paste it only in certain points (web browser);
- *   use another key combination to show and change the selections?
+ *   . use another key combination to show and change the selections
+ *   . display on a middle-click not followed by a request for the selection
  * - multiselect only makes a single request for the selection when adding one;
  *   the result may be only an initial part of the selection if it is long
  */
@@ -118,6 +118,11 @@
 #include <X11/extensions/XTest.h>
 
 #define MIN(a,b) (((a) < (b)) ? (a) : (b))
+
+/*
+ * maximum number of strings
+ */
+#define MAXNUM 20
 
 /*
  * font
@@ -418,6 +423,25 @@ char *GetSelection(Display *d, Window w, Atom selection, Atom target) {
 }
 
 /*
+ * index of a key
+ */
+int keyindex(int k) {
+	if (k >= '1' && k <= '9')
+		return k - '1';
+	if (k >= 'a' && k <= 'z')
+		return k - 'a' + 9;
+	return -1;
+}
+char _keylabel[20];
+char *keylabel(int k) {
+	if (k < 10)
+		sprintf(_keylabel, "%d", k);
+	else
+		sprintf(_keylabel, "%c", k + 'a' - 10);
+	return _keylabel;
+}
+
+/*
  * window parameters
  */
 struct WindowParameters {
@@ -469,7 +493,10 @@ void draw(Display *d, Window w, struct WindowParameters *wp,
 				lpos + wp->fs->descent - 3);
 		}
 		else {
-			sprintf(num, "%d ", i + 1);
+			if (i + 1 < 10)
+				sprintf(num, "%d ", i + 1);
+			else
+				sprintf(num, "%c ", i + 'a' - 9);
 			XDrawString(d, w, wp->g, 0, lpos, num, strlen(num));
 			nwidth = XTextWidth(wp->fs, num, strlen(num));
 			XDrawString(d, w, wp->g, nwidth, lpos,
@@ -511,7 +538,7 @@ int main(int argc, char *argv[]) {
 	Bool immediate = False;
 	Bool click = True;
 	char **buffers, separator, *terminator;
-	int a, num, size = 9;
+	int a, num;
 
 				/* parse arguments */
 
@@ -542,8 +569,8 @@ int main(int argc, char *argv[]) {
 	}
 	else if (argc - 1 == 1 && ! strcmp(argv[1], "-")) {
 		printf("reading selections from stdin\n");
-		buffers = malloc(size * sizeof(char *));
-		for (num = 0; num < 9; num++) {
+		buffers = malloc(MAXNUM * sizeof(char *));
+		for (num = 0; num < MAXNUM; num++) {
 			buffers[num] = malloc(500 * sizeof(char));
 			if (NULL == fgets(buffers[num], 500, stdin)) {
 				free(buffers[num]);
@@ -555,8 +582,8 @@ int main(int argc, char *argv[]) {
 		}
 	}
 	else {
-		num = MIN(argc - 1, 9);
-		buffers = malloc(size * sizeof(char *));
+		num = MIN(argc - 1, MAXNUM);
+		buffers = malloc(MAXNUM * sizeof(char *));
 		for (a = 0; a < num; a++)
 			buffers[a] = strdup(argv[a + 1]);
 	}
@@ -608,9 +635,9 @@ int main(int argc, char *argv[]) {
 
 	printf("selected strings:\n");
 	for (a = 0; a < num; a++)
-		printf("%4d: %s\n", a + 1, buffers[a]);
-	printf("\nmiddle-click and press %d-%d to paste one of them, ", 1, num);
-	printf("or 'q' to quit\n");
+		printf("%4s: %s\n", keylabel(a + 1), buffers[a]);
+	printf("\nmiddle-click and press %s-", keylabel(1));
+	printf("%s to paste one of them, or 'q' to quit\n", keylabel(num));
 
 				/* load font and colors */
 
@@ -771,7 +798,7 @@ int main(int argc, char *argv[]) {
 		case SelectionNotify:
 			if (e.xselection.property == None)
 				break;
-			if (num >= size)
+			if (num >= MAXNUM)
 				break;
 			buffers[num] = GetSelection(d, w,
 				e.xselection.selection, e.xselection.target);
@@ -793,7 +820,7 @@ int main(int argc, char *argv[]) {
 			k = XLookupKeysym(&e.xkey, 0);
 			if (e.xkey.window == r && k == 'z') {
 				printf("add new selection\n");
-				if (num < size)
+				if (num >= MAXNUM)
 					XConvertSelection(d, XA_PRIMARY,
 						XA_STRING, XA_PRIMARY,
 						w, CurrentTime);
@@ -803,11 +830,9 @@ int main(int argc, char *argv[]) {
 				printf("no pending request\n");
 				break;
 			}
-			if ((int) k - '1' >= 0 && (int) k - '1' < num &&
-			    request.requestor != w) {
-				key = k - '1';
+			key = keyindex(k);
+			if (key >= 0 && key < num && request.requestor != w)
 				printf("pasting %s\n", buffers[key]);
-			}
 			else if (k == XK_Up || k == XK_Down) {
 				if (num == 0)
 					break;
