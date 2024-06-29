@@ -558,13 +558,13 @@ int main(int argc, char *argv[]) {
 	Bool daemon = False, daemonother;
 	Bool immediate = False;
 	Bool click = True;
-	Bool functionkey = True, force = False;
+	Bool functionkey = False, force = False;
 	char **buffers, separator, *terminator;
 	int a, num;
 
 				/* parse arguments */
 
-	while (-1 != (opt = getopt(argc, argv, "dikfpt:"))) {
+	while (-1 != (opt = getopt(argc, argv, "dik:fpt:"))) {
 		switch (opt) {
 		case 'd':
 			daemon = True;
@@ -573,7 +573,11 @@ int main(int argc, char *argv[]) {
 			immediate = True;
 			break;
 		case 'k':
-			functionkey = False;
+			if (! ! strcmp(optarg, "F1")) {
+				printf("only key F1 currently supported\n");
+				exit(EXIT_FAILURE);
+			}
+			functionkey = True;
 			break;
 		case 'f':
 			force = True;
