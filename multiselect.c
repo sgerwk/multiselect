@@ -6,6 +6,7 @@
 
 /*
  * todo:
+ * - optionlly, send selection one-by-one by XTestFakeKeyEvent()
  * - the current selections can only be shown and changed when another
  *   program tries to paste one; some programs can copy text but never paste
  *   it (e.g., pdf viewers) or paste it only in certain points (web browser);
