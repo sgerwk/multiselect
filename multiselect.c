@@ -7,11 +7,6 @@
 /*
  * todo:
  * - optionlly, send selection one-by-one by XTestFakeKeyEvent()
- * - the current selections can only be shown and changed when another
- *   program tries to paste one; some programs can copy text but never paste
- *   it (e.g., pdf viewers) or paste it only in certain points (web browser);
- *   . use another key combination to show and change the selections
- *   . display on a middle-click not followed by a request for the selection
  * - multiselect only makes a single request for the selection when adding one;
  *   the result may be only an initial part of the selection if it is long
  */
