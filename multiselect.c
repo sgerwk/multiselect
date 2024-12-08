@@ -7,6 +7,9 @@
 /*
  * todo:
  * - optionlly, send selection one-by-one by XTestFakeKeyEvent()
+ *   option: -f #
+ *   effect:	#click and #down are sent as button and key events
+ *		#n = click + n keydown
  * - multiselect only makes a single request for the selection when adding one;
  *   the result may be only an initial part of the selection if it is long
  */
