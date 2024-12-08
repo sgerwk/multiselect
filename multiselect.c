@@ -987,7 +987,7 @@ int main(int argc, char *argv[]) {
 					selected = num - 1;
 			}
 
-			XUnmapWindow(d, e.xbutton.window);
+			XUnmapWindow(d, e.xkey.window);
 			// -> UnmapNotify
 			break;
 
