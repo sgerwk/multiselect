@@ -226,6 +226,7 @@ void WindowAtPointer(Display *d, Window w) {
 		y = rheight - 10 - (int) height;
 
 	XMoveWindow(d, w, x, y);
+	printf("window moved at x=%d y=%d\n", x, y);
 }
 
 /*
@@ -542,7 +543,7 @@ int main(int argc, char *argv[]) {
 	Time t;
 	struct timeval last, flashtime;
 	int interval = 80000;
-	Bool exitnext, stayinloop, pending, showing, firefox, chosen;
+	Bool exitnext, stayinloop, pending, showing, firefox, chosen, changed;
 	XEvent e;
 	XSelectionRequestEvent *re, request;
 	KeySym k;
@@ -553,6 +554,7 @@ int main(int argc, char *argv[]) {
 	int ret, pret;
 	int key;
 	int x, y, xb, yb;
+	unsigned int dummy;
 
 	int opt;
 	Bool daemon = False, daemonother;
@@ -953,12 +955,14 @@ int main(int argc, char *argv[]) {
 			}
 			else {
 				key = -1;
+				changed = False;
 				switch (k) {
 				case 's':
 					printf("delete last selection\n");
 					if (num > 0) {
 						num--;
 						free(buffers[num]);
+						changed = True;
 					}
 					if (num > 0)
 						break;
@@ -974,6 +978,7 @@ int main(int argc, char *argv[]) {
 					for (a = 0; a < num; a++)
 						free(buffers[a]);
 					num = 0;
+					changed = True;
 					// disown selection even when exiting
 					// to avoid the requestor to ask it
 					// again with a different conversion
@@ -989,6 +994,17 @@ int main(int argc, char *argv[]) {
 
 			XUnmapWindow(d, e.xkey.window);
 			// -> UnmapNotify
+
+			if (changed) {
+				XGetGeometry(d, w, &r, &xb, &yb,
+					&dummy, &dummy, &dummy, &dummy);
+				XMoveWindow(d, f, xb, yb);
+				ResizeWindow(d, f, wp.fs, num);
+				XMapRaised(d, f);
+				ShortTime(&flashtime, 0, True);
+				// -> Expose on the flash window
+			}
+
 			break;
 
 		case ButtonRelease:
