@@ -716,7 +716,7 @@ int main(int argc, char *argv[]) {
 	prev = None;
 	last.tv_sec = 0;
 	last.tv_usec = 0;
-	key = 0;
+	key = -1;
 	selected = -1;
 
 	for (stayinloop = True, exitnext = False; stayinloop;) {
