@@ -92,8 +92,8 @@
 /*
  * the flash window
  *
- * when the user adds a selection by ctrl-shift-z, the selections are briefly
- * shown to confirm that the addition succeded
+ * when the user adds a selection by ctrl-shift-z or by F2 (if enabled by -k),
+ * the selections are briefly shown to confirm that the addition succeded
  *
  * this is done by a window that is not the multiselect window because of its
  * different treatment of events: only Expose events matter, and they cause the
@@ -420,6 +420,7 @@ char *GetSelection(Display *d, Window w, Atom selection, Atom target) {
 		return NULL;
 
 	printf("bytes left: %lu\n", after);
+	printf("selection received: ");
 	for (i = 0; i < nitems; i++)
 		printf("%c", string[i]);
 	printf("\n");
@@ -557,7 +558,7 @@ int main(int argc, char *argv[]) {
 	Bool daemon = False, daemonother;
 	Bool immediate = False;
 	Bool click = True;
-	Bool functionkey = False, force = False;
+	Bool functionkeyF1 = False, functionkeyF2 = False, force = False;
 	char **buffers, separator, *terminator;
 	int a, num;
 
@@ -572,11 +573,12 @@ int main(int argc, char *argv[]) {
 			immediate = True;
 			break;
 		case 'k':
-			if (! ! strcmp(optarg, "F1")) {
-				printf("only key F1 currently supported\n");
-				exit(EXIT_FAILURE);
-			}
-			functionkey = True;
+			if (! ! strcmp(optarg, "F1"))
+				functionkeyF1 = True;
+			else if (! ! strcmp(optarg, "F2"))
+				functionkeyF2 = True;
+			else
+				printf("only F1 and F2 currently supported\n");
 			break;
 		case 'f':
 			force = True;
@@ -637,12 +639,19 @@ int main(int argc, char *argv[]) {
 		XCloseDisplay(d);
 		exit(EXIT_FAILURE);
 	}
-	if (daemon || ! daemonother)
-		XGrabKey(d, XKeysymToKeycode(d, XK_z), ControlMask | ShiftMask,
-			r, False, GrabModeAsync, GrabModeAsync);
-	if (functionkey)
+	if (functionkeyF1)
 		XGrabKey(d, XKeysymToKeycode(d, XK_F1), 0, r, False,
 			GrabModeAsync, GrabModeAsync);
+	if (functionkeyF2)
+		XGrabKey(d, XKeysymToKeycode(d, XK_F2), 0, r, False,
+			GrabModeAsync, GrabModeAsync);
+	if (daemon || ! daemonother) {
+		XGrabKey(d, XKeysymToKeycode(d, XK_z), ControlMask | ShiftMask,
+			r, False, GrabModeAsync, GrabModeAsync);
+		if (functionkeyF2)
+			XGrabKey(d, XKeysymToKeycode(d, XK_F2), 0, r, False,
+				GrabModeAsync, GrabModeAsync);
+	}
 
 				/* create the window and select input */
 
@@ -721,7 +730,7 @@ int main(int argc, char *argv[]) {
 			XUnmapWindow(d, f);
 			continue;
 		}
-		if (functionkey &&
+		if (functionkeyF1 &&
 		    e.type == KeyPress &&
 		    XLookupKeysym(&e.xkey, 0) == XK_F1 &&
 		    ! pending) {
@@ -741,11 +750,20 @@ int main(int argc, char *argv[]) {
 
 		switch (e.type) {
 		case SelectionRequest:
-			printf("selection request, ");
+			printf("selection request ");
+			printf("from 0x%lX, ", e.xselectionrequest.requestor);
 			PrintAtomName(d, e.xselectionrequest.target);
 			printf("\n");
 
 			re = &e.xselectionrequest;
+
+					/* request from self */
+
+			if (e.xselectionrequest.requestor == w) {
+				printf("request from self, refusing\n");
+				RefuseSelection(d, re);
+				break;
+			}
 
 					/* request for TARGETS */
 
@@ -862,14 +880,17 @@ int main(int argc, char *argv[]) {
 			break;
 
 		case SelectionNotify:
+			printf("selection notify\n");
 			if (e.xselection.property == None)
 				break;
 			if (num >= MAXNUM)
 				break;
 			buffers[num] = GetSelection(d, w,
 				e.xselection.selection, e.xselection.target);
-			if (buffers[num] != NULL)
+			if (buffers[num] != NULL) {
+				printf("selection added: %s\n", buffers[num]);
 				num++;
+			}
 			if (num >= 2 && AcquirePrimarySelection(d, r, w, &t)) {
 				XCloseDisplay(d);
 				return EXIT_FAILURE;
@@ -883,14 +904,22 @@ int main(int argc, char *argv[]) {
 			break;
 
 		case KeyPress:
-			printf("key: %d\n", e.xkey.keycode);
+			printf("keycode: %d\n", e.xkey.keycode);
 			k = XLookupKeysym(&e.xkey, 0);
+			if (functionkeyF2 && k == XK_F2)
+				k = 'z';
+			printf("k: %c\n", (unsigned char) k);
 			if (e.xkey.window == r && ! pending) {
 				switch (k) {
 				case 'z':
-					printf("add new selection\n");
+					printf("add new selection %d\n", num);
 					if (num >= MAXNUM)
 						break;
+					if (XGetSelectionOwner(d, XA_PRIMARY)
+							== w) {
+						printf("owner self\n");
+						break;
+					}
 					XConvertSelection(d, XA_PRIMARY,
 						XA_STRING, XA_PRIMARY, w,
 						CurrentTime);

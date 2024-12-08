@@ -14,7 +14,7 @@ multiselect - a multiple selections server for X11
 .B multiselect
 [\fI-d\fP]
 [\fI-i\fP]
-[\fI-k F1\fP]
+[\fI-k (F1|F2)\fP]
 [\fI-f\fP]
 [\fI-p\fP]
 [\fI-t sep\fP]
@@ -56,10 +56,11 @@ after pressing the up and down cursor keys, without the need to press 'Enter'.
 Option \fI-t sep\fP makes everything up to the first \fIsep\fP character in
 each string displayed in the menu but not pasted (see \fILABELS\fP, below).
 
-Option \fI-k F1\fP enables the F1 key to open the selection menu.
+Option \fI-k (F1|F2)\fP enables either the F1 key to open the selection menu or
+the F2 key to add a new selection.
 Option \fI-f\fP enables sending the selection when the menu has been opened by
-a F1 keystroke; technically, this is achieved by sending a fake middle mouse
-click to the root window.
+F1; technically, this is achieved by sending a fake middle mouse click to the
+root window.
 
 .
 .
