@@ -899,11 +899,15 @@ int main(int argc, char *argv[]) {
 			}
 
 			if (showing) {
+				XGetGeometry(d, w, &r, &xb, &yb,
+					&dummy, &dummy, &dummy, &dummy);
+				XMoveWindow(d, f, xb, yb);
 				XUnmapWindow(d, w);
 				// -> UnmapNotify
 			}
+			else
+				WindowAtPointer(d, f);
 
-			WindowAtPointer(d, f);
 			ResizeWindow(d, f, wp.fs, num);
 			XMapRaised(d, f);
 			ShortTime(&flashtime, 0, True);
@@ -916,7 +920,7 @@ int main(int argc, char *argv[]) {
 			if (functionkeyF2 && k == XK_F2)
 				k = 'z';
 			printf("k: %c\n", (unsigned char) k);
-			if (e.xkey.window == r && ! pending) {
+			if (! pending) {
 				switch (k) {
 				case 'z':
 					printf("add new selection %d\n", num);
@@ -963,6 +967,7 @@ int main(int argc, char *argv[]) {
 				changed = False;
 				switch (k) {
 				case 's':
+				case XK_F3:
 					printf("delete last selection\n");
 					if (num > 0) {
 						num--;
@@ -978,6 +983,7 @@ int main(int argc, char *argv[]) {
 						None, CurrentTime);
 					break;
 				case 'd':
+				case XK_F4:
 				case 'q':
 					printf("delete all selections\n");
 					for (a = 0; a < num; a++)
