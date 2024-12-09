@@ -898,6 +898,11 @@ int main(int argc, char *argv[]) {
 				return EXIT_FAILURE;
 			}
 
+			if (showing) {
+				XUnmapWindow(d, w);
+				// -> UnmapNotify
+			}
+
 			WindowAtPointer(d, f);
 			ResizeWindow(d, f, wp.fs, num);
 			XMapRaised(d, f);
