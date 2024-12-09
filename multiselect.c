@@ -924,7 +924,7 @@ int main(int argc, char *argv[]) {
 						break;
 					if (XGetSelectionOwner(d, XA_PRIMARY)
 							== w) {
-						printf("owner self\n");
+						printf("owner is self\n");
 						break;
 					}
 					XConvertSelection(d, XA_PRIMARY,
