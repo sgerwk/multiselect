@@ -512,6 +512,11 @@ void draw(Display *d, Window w, struct WindowParameters *wp,
 			XDrawString(d, w, wp->g, 0, lpos,
 				help, MIN(sizeof(help) - 1, 100));
 			XFillRectangle(d, w, wp->g,
+				width - interline * 2 - 3,
+				lpos - wp->fs->ascent + 1,
+				interline,
+				lpos + wp->fs->descent - 3);
+			XFillRectangle(d, w, wp->g,
 				width - interline - 1,
 				lpos - wp->fs->ascent + 1,
 				interline,
@@ -519,6 +524,14 @@ void draw(Display *d, Window w, struct WindowParameters *wp,
 			XSetForeground(d, wp->g, wp->black);
 			XSetLineAttributes(d, wp->g, 5,
 				LineSolid, CapRound, JoinMiter);
+			x = width - interline - 6 - 2;
+			y = lpos;
+			XDrawLine(d, w, wp->g,
+				x - (interline - 8) / 2, y,
+				x, y - wp->fs->ascent + 5);
+			XDrawLine(d, w, wp->g,
+				x - (interline - 8) / 2, y,
+				x - interline + 8, y - wp->fs->ascent + 5);
 			x = width - 6;
 			y = lpos;
 			XDrawLine(d, w, wp->g,
@@ -1041,6 +1054,22 @@ int main(int argc, char *argv[]) {
 			if (key == -1 && ! daemon) {
 				XGetWindowAttributes(d,
 					e.xbutton.window, &wa);
+				if (xb >= wa.width - 6 - 2 * il &&
+				    xb <= wa.width - il - 3 &&
+				    ! pending) {
+					printf("add new selection %d\n", num);
+					if (num >= MAXNUM)
+						break;
+					if (XGetSelectionOwner(d, XA_PRIMARY)
+							== w)
+						printf("owner is self\n");
+					else
+						XConvertSelection(d,
+							XA_PRIMARY,
+							XA_STRING, XA_PRIMARY,
+							w, CurrentTime);
+						// -> SelectionNotify
+				}
 				if (xb >= wa.width - il)
 					exitnext = True;
 			}
