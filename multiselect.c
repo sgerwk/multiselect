@@ -591,9 +591,9 @@ int main(int argc, char *argv[]) {
 			immediate = True;
 			break;
 		case 'k':
-			if (! ! strcmp(optarg, "F1"))
+			if (! strcmp(optarg, "F1"))
 				functionkeyF1 = True;
-			else if (! ! strcmp(optarg, "F2"))
+			else if (! strcmp(optarg, "F2"))
 				functionkeyF2 = True;
 			else
 				printf("only F1 and F2 currently supported\n");
