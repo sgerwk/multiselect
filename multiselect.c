@@ -930,7 +930,7 @@ int main(int argc, char *argv[]) {
 		case KeyPress:
 			printf("keycode: %d\n", e.xkey.keycode);
 			k = XLookupKeysym(&e.xkey, 0);
-			if (functionkeyF2 && k == XK_F2)
+			if (k == XK_F2)
 				k = 'z';
 			printf("k: %c\n", (unsigned char) k);
 			if (! pending) {
