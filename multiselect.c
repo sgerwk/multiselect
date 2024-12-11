@@ -160,9 +160,9 @@ Bool WindowNameExists(Display *d, Window root, char *name) {
 /*
  * grab a key
  */
-Bool GrabKey(Display *d, Window r, KeySym keysym) {
+Bool GrabKey(Display *d, Window r, KeySym keysym, unsigned int modifiers) {
 	Bool res;
-	res = XGrabKey(d, XKeysymToKeycode(d, keysym), 0, r, False,
+	res = XGrabKey(d, XKeysymToKeycode(d, keysym), modifiers, r, False,
 			GrabModeAsync, GrabModeAsync);
 	if (res == True)
 		printf("grabbed key %ld\n", keysym);
@@ -659,13 +659,13 @@ int main(int argc, char *argv[]) {
 		exit(EXIT_FAILURE);
 	}
 	if (functionkeyF1)
-		GrabKey(d, r, XK_F1);
+		GrabKey(d, r, XK_F1, 0);
 	if (functionkeyF2)
-		GrabKey(d, r, XK_F2);
+		GrabKey(d, r, XK_F2, 0);
 	if (daemon || ! daemonother) {
-		GrabKey(d, r, XK_z);
+		GrabKey(d, r, XK_z, ControlMask | ShiftMask);
 		if (functionkeyF2)
-			GrabKey(d, r, XK_F2);
+			GrabKey(d, r, XK_F2, 0);
 	}
 
 				/* create the window and select input */
