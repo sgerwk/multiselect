@@ -259,8 +259,10 @@ Bool AcquirePrimarySelection(Display *d, Window root, Window w, Time *t) {
 
 	XSetSelectionOwner(d, XA_PRIMARY, w, CurrentTime);
 	o = XGetSelectionOwner(d, XA_PRIMARY);
-	if (o != w) {
-		printf("Cannot get selection ownership\n");
+	if (o == w)
+		printf("aquired selection ownership\n");
+	else {
+		printf("cannot get selection ownership\n");
 		return True;
 	}
 	if (t != NULL)
