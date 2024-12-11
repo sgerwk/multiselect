@@ -634,6 +634,7 @@ int main(int argc, char *argv[]) {
 	}
 	s = DefaultScreenOfDisplay(d);
 	r = DefaultRootWindow(d);
+	printf("root window: 0x%lx\n", r);
 
 				/* run or not, daemon or not */
 
