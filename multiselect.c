@@ -673,8 +673,6 @@ int main(int argc, char *argv[]) {
 	}
 	if (functionkeyF1)
 		GrabKey(d, r, XK_F1, 0);
-	if (functionkeyF2)
-		GrabKey(d, r, XK_F2, 0);
 	if (daemon || ! daemonother) {
 		GrabKey(d, r, XK_z, ControlMask | ShiftMask);
 		if (functionkeyF2)
