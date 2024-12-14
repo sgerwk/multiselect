@@ -941,12 +941,11 @@ int main(int argc, char *argv[]) {
 		case KeyPress:
 			printf("keycode: %d\n", e.xkey.keycode);
 			k = XLookupKeysym(&e.xkey, 0);
-			if (k == XK_F2)
-				k = 'z';
 			printf("k: %c\n", (unsigned char) k);
 			if (! pending) {
 				switch (k) {
 				case 'z':
+				case XK_F2:
 					printf("add new selection %d\n", num);
 					if (num >= MAXNUM)
 						break;
