@@ -934,6 +934,7 @@ int main(int argc, char *argv[]) {
 				return EXIT_FAILURE;
 			}
 
+			ResizeWindow(d, f, wp.fs, num);
 			if (showing) {
 				XGetGeometry(d, w, &r, &xb, &yb,
 					&dummy, &dummy, &dummy, &dummy);
@@ -943,8 +944,6 @@ int main(int argc, char *argv[]) {
 			}
 			else
 				WindowAtPointer(d, f);
-
-			ResizeWindow(d, f, wp.fs, num);
 			XMapRaised(d, f);
 			ShortTime(&flashtime, 0, True);
 			// -> Expose on the flash window
