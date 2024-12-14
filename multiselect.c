@@ -266,6 +266,18 @@ Time GetTimestampForNow(Display *d, Window w) {
 }
 
 /*
+ * request the selection
+ */
+Bool RequestPrimarySelection(Display *d, Window w) {
+	if (XGetSelectionOwner(d, XA_PRIMARY) == w) {
+		printf("owner is self\n");
+		return False;
+	}
+	XConvertSelection(d, XA_PRIMARY, XA_STRING, XA_PRIMARY, w, CurrentTime);
+	return True;
+}
+
+/*
  * acquire ownership of the primary selection
  */
 Bool AcquirePrimarySelection(Display *d, Window root, Window w, Time *t) {
@@ -949,14 +961,7 @@ int main(int argc, char *argv[]) {
 					printf("add new selection %d\n", num);
 					if (num >= MAXNUM)
 						break;
-					if (XGetSelectionOwner(d, XA_PRIMARY)
-							== w) {
-						printf("owner is self\n");
-						break;
-					}
-					XConvertSelection(d, XA_PRIMARY,
-						XA_STRING, XA_PRIMARY, w,
-						CurrentTime);
+					RequestPrimarySelection(d, w);
 					// -> SelectionNotify
 					break;
 				}
@@ -1057,15 +1062,8 @@ int main(int argc, char *argv[]) {
 					printf("add new selection %d\n", num);
 					if (num >= MAXNUM)
 						break;
-					if (XGetSelectionOwner(d, XA_PRIMARY)
-							== w)
-						printf("owner is self\n");
-					else
-						XConvertSelection(d,
-							XA_PRIMARY,
-							XA_STRING, XA_PRIMARY,
-							w, CurrentTime);
-						// -> SelectionNotify
+					RequestPrimarySelection(d, w);
+					// -> SelectionNotify
 				}
 				if (xb >= wa.width - il)
 					exitnext = True;
