@@ -756,8 +756,8 @@ int main(int argc, char *argv[]) {
 			XUnmapWindow(d, f);
 			continue;
 		}
-		if (functionkeyF1 &&
-		    e.type == KeyPress &&
+		if (e.type == KeyPress &&
+		    functionkeyF1 &&
 		    XLookupKeysym(&e.xkey, 0) == XK_F1 &&
 		    ! pending) {
 			if (showing) {
