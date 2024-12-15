@@ -27,7 +27,7 @@ multiselect - a multiple selections server for X11
 
 Store multiple strings the user can choose among when pasting.
 
-The strings can be given in three ways:
+The strings can be:
 
 .IP "  * " 4
 the commandline arguments; e.g., \fImultiselect first second third\fP
@@ -37,7 +37,7 @@ the lines of a text file passed as standard input:
 \fImultiselect - < file\fP
 
 .IP "  * "
-adding them at run-time with ctrl-shift-z, or F2 if enabled by \fI-k\fP
+added at run-time with ctrl-shift-z, or F2 if enabled by \fI-k\fP
 
 .P
 
@@ -51,17 +51,35 @@ Pressing any other key or clicking on the header causes no string to be pasted.
 Pression 'q' or clicking on the X square terminates \fImultiselect\fP unless
 the option \fI-d\fP was given.
 
-Option \fI-i\fP makes the next or previous string to be pasted immediately
-after pressing the up and down cursor keys, without the need to press 'Enter'.
+.
+.
+.
+.SH ARGUMENTS
 
-Option \fI-t sep\fP makes everything up to the first \fIsep\fP character in
-each string displayed in the menu but not pasted (see \fILABELS\fP, below).
+.TP
+.B -i
+the next or previous string is pasted immediately after pressing the up and
+down cursor keys, without the need to press 'Enter'
 
-Option \fI-k (F1|F2)\fP enables either the F1 key to open the selection menu or
-the F2 key to add a new selection.
-Option \fI-f\fP enables sending the selection when the menu has been opened by
-F1; technically, this is achieved by sending a fake middle mouse click to the
-root window.
+.TP
+.B -d
+keep running even after pressing 'q' or clicking the X square; this is intended
+to later add new strings
+
+.TP
+.BI -t " sep
+everything up to the first \fIsep\fP character in each string is displayed in
+the menu but not pasted: see \fILABELS\fP, below
+
+.TP
+.BI -k " (F1|F2)
+enable the \fIF1\fP or the \fIF2\fP key to open the selection menu and add a
+new string
+
+.TP
+.B -f
+send the selection even when the menu has been opened by \fIF1\fP rather than
+pasting; achieved by sending a fake middle mouse click to the root window
 
 .
 .
@@ -79,16 +97,19 @@ remains to be done is only to paste each on the appropriate field of the web
 form. The same if \fPmultiselect\fP can be called with the fields as its
 commandline argument.
 
-Strings can be added and removed at runtime. To remove the last, middle-click
-and press 's'. To remove all, middle-click and press 'd'. To add one, select it
-and press ctrl-shift-z.
+Strings can be added and removed at runtime. When the menu is shown by
+middle-clicking or pressing \fIF1\fP (if enabled by \fI-k F1\fP), the keys for
+adding the current selection are 'z' and \fIF2\fP, for deleting the last string
+are 's' and \fIF3\fP, for deleting all strings are 'd' and \fIF4\fP. When the
+menu is not shown, ctrl-shift-z adds the current selection to the list, or
+\fIF2\fP if enabled by \fI-k F2\fP.
 
 .
 .
 .
 .SH BATCH EXAMPLE
 
-The following file is to be posted to a web form that has a textfield for the
+The following file is to be posted to a web form that has a text field for the
 name, surname, address, city and state of residence.
 
 .nf
@@ -126,8 +147,8 @@ The result is:
 .fi
 
 The data of the first person is ready: to paste the name, middle-click on the
-textfield for the name in the web form and press '1'. For the surname,
-middle-click on the textfield for the surname and press '2', and so on. When
+text field for the name in the web form and press '1'. For the surname,
+middle-click on the text field for the surname and press '2', and so on. When
 the form is full and submitted, a further middle-click followed by key 'q'
 terminates \fImultiselect\fP so that the script proceeds to the second line.
 
@@ -141,17 +162,14 @@ around a text file, hard to be found by scripts.
 
 Open the text file and start \fImultiselect\fP with no argument.
 
-Select "John Smith" in the text file and press ctrl-shift-z. Then, select
-"2030 Blue Ave" and press ctrl-shift-z. Finally, select "Simonville IL" and
-press ctrl-shift-z.
+Select "John Smith" in the text file and press ctrl-shift-z. Then, select "2030
+Blue Ave" and press ctrl-shift-z. Finally, select "Simonville IL" and press
+ctrl-shift-z. The \fIF2\fP key is alternative to ctrl-shift-z if enabled by
+\fI-k F2\fP.
 
 The strings are now ready to be pasted: middle-click on the text field for the
 name and press '1', middle-click on the field for the address and press '2',
 middle-click on the field for the city and press '3', as above.
-
-Option \fI-d\fP keeps multiselect running even after pressing 'q'. It is
-intended to keep multiselect running in the background all time and activating
-upon ctrl-shift-z.
 
 .
 .
@@ -177,13 +195,13 @@ The three strings are displayed in full when middle clicking:
 \fP
 .fi
 
-Pressing \fI2\fP only pastes \fISmith\fP.
+Pressing \fI1\fP only pastes \fIJohn\fP,
+pressing \fI2\fP only pastes \fISmith\fP, etc.
 
 Every single character can be used in place of the space except the null
 character \fI\\0\fP. The strings are displayed in full, but only what follows
 the first first occurrence of the character is pasted. If a string does not
-contain the character at all is pasted in full, as if it had no label. This
-option affects all three ways to specify the selections.
+contain the character at all is pasted in full, as if it had no label.
 
 .
 .
@@ -206,15 +224,16 @@ than a certain time (e.g., half a second). On the other hand, the old behavior
 works on clients that do not paste the selection on a middle button click. This
 is why this mechanism is still available, passing \fI-p\fP.
 
-' how firefox is dealt with in the old mechanism:
-'
-' firefox discards pasted text if it arrives more than half a second later than
-' when requested (e.g., by middle click); this is the \fIkClipboardTimeout\fP
-' constant in the firefox source code, set to \fI500000\fP microseconds; it
-' cannot be changed by configuration options, which means that the time for
-' choosing the string to paste in \fImultiselect\fP is only half a second; in
-' order to facilitate dealing with this drawback of firefox, \fImultiselect\fP
-' detects a timeout in firefox and pastes the chosen string on the following
-' request; this means that if middle-click + '1' does not work, a further
-' middle-click may complete pasting (without pressing '1' again)
+\" how firefox is dealt with in the old mechanism:
+\"
+\" firefox discards pasted text if it arrives more than half a second later
+\" than when requested (e.g., by middle click); this is the
+\" \fIkClipboardTimeout\fP constant in the firefox source code, set to
+\" \fI500000\fP microseconds; it cannot be changed by configuration options,
+\" which means that the time for choosing the string to paste in
+\" \fImultiselect\fP is only half a second; in order to facilitate dealing with
+\" this drawback of firefox, \fImultiselect\fP detects a timeout in firefox and
+\" pastes the chosen string on the following request; this means that if
+\" middle-click + '1' does not work, a further middle-click may complete
+\" pasting (without pressing '1' again)
 
