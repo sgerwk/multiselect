@@ -46,7 +46,8 @@ of them can be pasted by either clicking on it, selecting with the cursor keys
 and pressing 'Enter', or by pressing a key between 1-9 and a-z.
 
 Pressing 'z' or F2 or clicking the V square adds the current selection to the
-list. Pressing 's' or F3 delete the last string, 'd' or F4 delete all of them.
+list. Pressing Delete or Backspace deletes the string under the cursor.
+Pressing 's' or F3 delete the last string, 'd' or F4 delete all of them.
 Pressing any other key or clicking on the header causes no string to be pasted.
 Pression 'q' or clicking on the X square terminates \fImultiselect\fP unless
 the option \fI-d\fP was given.
@@ -99,9 +100,10 @@ commandline argument.
 
 Strings can be added and removed at runtime. When the menu is shown by
 middle-clicking or pressing \fIF1\fP (if enabled by \fI-k F1\fP), the keys for
-adding the current selection are 'z' and \fIF2\fP, for deleting the last string
-are 's' and \fIF3\fP, for deleting all strings are 'd' and \fIF4\fP. When the
-menu is not shown, ctrl-shift-z adds the current selection to the list, or
+adding the current selection are 'z' and \fIF2\fP, for deleting the string
+under the cursor are Backspace and Delete, for deleting the last string are 's'
+and \fIF3\fP, for deleting all strings are 'd' and \fIF4\fP. When the menu is
+not shown, ctrl-shift-z adds the current selection to the list. The same does
 \fIF2\fP if enabled by \fI-k F2\fP.
 
 .

@@ -584,7 +584,8 @@ int main(int argc, char *argv[]) {
 	Time t;
 	struct timeval last, flashtime;
 	int interval = 80000;
-	Bool exitnext, stayinloop, pending, showing, firefox, chosen, changed;
+	Bool exitnext, stayinloop;
+	Bool pending, showing, firefox, chosen, changed, keep;
 	XEvent e;
 	XSelectionRequestEvent *re, request;
 	KeySym k;
@@ -992,7 +993,28 @@ int main(int argc, char *argv[]) {
 			else {
 				key = -1;
 				changed = False;
+				keep = False;
 				switch (k) {
+				case XK_BackSpace:
+				case XK_Delete:
+					if (selected == -1) {
+						printf("no string selected\n");
+						break;
+					}
+					printf("delete %s\n", buffers[selected]);
+					free(buffers[selected]);
+					for (a = selected; a < num - 1; a++)
+						buffers[a] = buffers[a + 1];
+					num--;
+					keep = True;
+					if (num > 0)
+						break;
+					// retain the selection if num==1 since
+					// the previous owner has already lost
+					// it at this point
+					XSetSelectionOwner(d, XA_PRIMARY,
+						None, CurrentTime);
+					break;
 				case 's':
 				case XK_F3:
 					printf("delete last selection\n");
@@ -1028,6 +1050,12 @@ int main(int argc, char *argv[]) {
 				}
 				if (selected >= num)
 					selected = num - 1;
+			}
+
+			if (keep) {
+				ResizeWindow(d, w, wp.fs, num);
+				draw(d, w, &wp, buffers, num, selected);
+				break;
 			}
 
 			XUnmapWindow(d, e.xkey.window);
