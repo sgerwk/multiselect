@@ -616,7 +616,7 @@ int main(int argc, char *argv[]) {
 	Bool daemon = False, daemonother;
 	Bool immediate = False;
 	Bool click = True;
-	Bool functionkeyF1 = False, functionkeyF2 = False, force = False;
+	Bool f1 = False, f2 = False, force = False;
 	char **buffers, separator, *terminator;
 	int a, num;
 
@@ -632,9 +632,9 @@ int main(int argc, char *argv[]) {
 			break;
 		case 'k':
 			if (! strcmp(optarg, "F1"))
-				functionkeyF1 = True;
+				f1 = True;
 			else if (! strcmp(optarg, "F2"))
-				functionkeyF2 = True;
+				f2 = True;
 			else
 				printf("only F1 and F2 currently supported\n");
 			break;
@@ -698,11 +698,11 @@ int main(int argc, char *argv[]) {
 		XCloseDisplay(d);
 		exit(EXIT_FAILURE);
 	}
-	if (functionkeyF1)
+	if (f1)
 		GrabKey(d, r, XK_F1, 0);
 	if (daemon || ! daemonother) {
 		GrabKey(d, r, XK_z, ControlMask | ShiftMask);
-		if (functionkeyF2)
+		if (f2)
 			GrabKey(d, r, XK_F2, 0);
 	}
 
@@ -793,7 +793,7 @@ int main(int argc, char *argv[]) {
 			continue;
 		}
 		if (e.type == KeyPress &&
-		    functionkeyF1 &&
+		    f1 &&
 		    XLookupKeysym(&e.xkey, 0) == XK_F1 &&
 		    ! pending) {
 			if (showing) {
