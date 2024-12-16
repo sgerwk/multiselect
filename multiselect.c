@@ -583,7 +583,7 @@ int main(int argc, char *argv[]) {
 
 	Time t;
 	struct timeval last, flashtime;
-	int interval = 80000;
+	int interval = 80000, hide, starthide = 800000, changehide = 500000;
 	Bool exitnext, stayinloop;
 	Bool pending, showing, firefox, chosen, changed, keep;
 	XEvent e;
@@ -744,6 +744,13 @@ int main(int argc, char *argv[]) {
 		return EXIT_FAILURE;
 	}
 
+				/* show the flash window on startup */
+
+	ResizeWindow(d, f, wp.fs, num);
+	WindowAtPointer(d, f);
+	hide = starthide;
+	XMapRaised(d, f);
+
 				/* main loop */
 
 	pending = False;
@@ -765,7 +772,7 @@ int main(int argc, char *argv[]) {
 			if (showing)
 				continue;
 			XFlush(d);
-			usleep(500000);
+			usleep(hide);
 			XUnmapWindow(d, f);
 			continue;
 		}
@@ -782,7 +789,7 @@ int main(int argc, char *argv[]) {
 			e.type = ShowWindow;
 			// -> ShowWindow
 		}
-		if (! ShortTime(&flashtime, 500000, False)) {
+		if (! ShortTime(&flashtime, hide, False)) {
 			printf("short time expired, hiding flash window\n");
 			XUnmapWindow(d, f);
 		}
@@ -945,6 +952,7 @@ int main(int argc, char *argv[]) {
 			}
 			else
 				WindowAtPointer(d, f);
+			hide = changehide;
 			XMapRaised(d, f);
 			ShortTime(&flashtime, 0, True);
 			// -> Expose on the flash window
@@ -1066,6 +1074,7 @@ int main(int argc, char *argv[]) {
 					&dummy, &dummy, &dummy, &dummy);
 				XMoveWindow(d, f, xb, yb);
 				ResizeWindow(d, f, wp.fs, num);
+				hide = changehide;
 				XMapRaised(d, f);
 				ShortTime(&flashtime, 0, True);
 				// -> Expose on the flash window
