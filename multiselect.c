@@ -792,18 +792,22 @@ int main(int argc, char *argv[]) {
 			message = NULL;
 			continue;
 		}
-		if (e.type == KeyPress &&
-		    f1 &&
-		    XLookupKeysym(&e.xkey, 0) == XK_F1 &&
-		    ! pending) {
-			if (showing) {
-				XUnmapWindow(d, w);
-				// -> UnmapNotify
-				continue;
+		if (e.type == KeyPress && ! pending) {
+			printf("keycode: %d\n", e.xkey.keycode);
+			k = XLookupKeysym(&e.xkey, 0);
+			printf("k: %c\n", (unsigned char) k);
+			switch (k) {
+			case XK_F1:
+				if (showing) {
+					XUnmapWindow(d, w);
+					// -> UnmapNotify
+					continue;
+				}
+				showing = True;
+				e.type = ShowWindow;
+				// -> ShowWindow
+				break;
 			}
-			showing = True;
-			e.type = ShowWindow;
-			// -> ShowWindow
 		}
 		if (! ShortTime(&flashtime, hide, False)) {
 			printf("short time expired, hiding flash window\n");
