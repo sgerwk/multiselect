@@ -492,10 +492,10 @@ struct WindowParameters {
  * draw the window
  */
 void draw(Display *d, Window w, struct WindowParameters *wp,
-		char *buffers[], int n, int selected) {
+		char *buffers[], int n, int selected, char *message) {
 	Window r;
 	int x, y;
-	unsigned int width, height, bw, depth, nwidth;
+	unsigned int width, height, bw, depth, twidth;
 	int lpos, interline;
 	int i;
 	char num[12], help[] = "multiselect";
@@ -561,12 +561,24 @@ void draw(Display *d, Window w, struct WindowParameters *wp,
 			else
 				sprintf(num, "%c ", i + 'a' - 9);
 			XDrawString(d, w, wp->g, 0, lpos, num, strlen(num));
-			nwidth = XTextWidth(wp->fs, num, strlen(num));
-			XDrawString(d, w, wp->g, nwidth, lpos,
+			twidth = XTextWidth(wp->fs, num, strlen(num));
+			XDrawString(d, w, wp->g, twidth, lpos,
 				buffers[i], MIN(strlen(buffers[i]), 100));
 		}
 		lpos += interline;
 	}
+
+	if (message == NULL)
+		return;
+
+	twidth = XTextWidth(wp->fs, message, strlen(message));
+	XFillRectangle(d, w, wp->g,
+		(width - twidth) / 2 - 20, height / 2,
+		twidth + 40, interline);
+	XSetForeground(d, wp->g, wp->white);
+	XDrawString(d, w, wp->g,
+		(width - twidth) / 2, interline + height / 2 - 8,
+		message, MIN(strlen(message), 100));
 }
 
 /*
@@ -583,7 +595,9 @@ int main(int argc, char *argv[]) {
 
 	Time t;
 	struct timeval last, flashtime;
-	int interval = 80000, hide, starthide = 800000, changehide = 500000;
+	int interval = 80000, hide;
+	int starthide = 800000, changehide = 500000, messagehide = 800000;
+	char *message = NULL, *selectmessage = "select a string first";
 	Bool exitnext, stayinloop;
 	Bool pending, showing, firefox, chosen, changed, keep;
 	XEvent e;
@@ -749,6 +763,7 @@ int main(int argc, char *argv[]) {
 	ResizeWindow(d, f, wp.fs, num);
 	WindowAtPointer(d, f);
 	hide = starthide;
+	message = NULL;
 	XMapRaised(d, f);
 
 				/* main loop */
@@ -768,12 +783,13 @@ int main(int argc, char *argv[]) {
 
 		if (e.type == Expose && e.xexpose.window == f) {
 			printf("expose on the flash window\n");
-			draw(d, f, &fp, buffers, num, selected);
+			draw(d, f, &fp, buffers, num, selected, message);
 			if (showing)
 				continue;
 			XFlush(d);
 			usleep(hide);
 			XUnmapWindow(d, f);
+			message = NULL;
 			continue;
 		}
 		if (e.type == KeyPress &&
@@ -916,7 +932,7 @@ int main(int argc, char *argv[]) {
 
 		case Expose:
 			printf("expose\n");
-			draw(d, w, &wp, buffers, num, selected);
+			draw(d, w, &wp, buffers, num, selected, NULL);
 			XSetInputFocus(d, w, RevertToNone, CurrentTime);
 			// grab pointer to disallow the other client from
 			// making further requests
@@ -969,7 +985,11 @@ int main(int argc, char *argv[]) {
 					printf("add new selection %d\n", num);
 					if (num >= MAXNUM)
 						break;
-					RequestPrimarySelection(d, w);
+					if (! RequestPrimarySelection(d, w)) {
+						hide = messagehide;
+						message = selectmessage;
+						XMapRaised(d, f);
+					}
 					// -> SelectionNotify
 					break;
 				}
@@ -1062,7 +1082,7 @@ int main(int argc, char *argv[]) {
 
 			if (keep) {
 				ResizeWindow(d, w, wp.fs, num);
-				draw(d, w, &wp, buffers, num, selected);
+				draw(d, w, &wp, buffers, num, selected, NULL);
 				break;
 			}
 
