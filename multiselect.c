@@ -998,7 +998,9 @@ int main(int argc, char *argv[]) {
 					break;
 				}
 			}
-			if (! pending && k != 'q' && ! (showing && force)) {
+			if (! pending &&
+			    k != 'q' && k != XK_F5 &&
+			    ! (showing && force)) {
 				printf("no pending request\n");
 				break;
 			}
@@ -1066,6 +1068,7 @@ int main(int argc, char *argv[]) {
 				case 'd':
 				case XK_F4:
 				case 'q':
+				case XK_F5:
 					printf("delete all selections\n");
 					for (a = 0; a < num; a++)
 						free(buffers[a]);
@@ -1076,8 +1079,9 @@ int main(int argc, char *argv[]) {
 					// again with a different conversion
 					XSetSelectionOwner(d, XA_PRIMARY,
 						None, CurrentTime);
-					if (k == 'q' && ! daemon)
-						exitnext = True;
+					if ((k != 'q' && k != XK_F5) || daemon)
+						break;
+					exitnext = True;
 					break;
 				}
 				if (selected >= num)
