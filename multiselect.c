@@ -771,9 +771,9 @@ int main(int argc, char *argv[]) {
 
 				/* get or acquire the primary selection */
 
-	if (continuous)
-		RequestPrimarySelection(d, w);
-	else if (AcquirePrimarySelection(d, r, w, &t)) {
+	if (((continuous && RequestPrimarySelection(d, w)) ||
+	    AcquirePrimarySelection(d, r, w, &t)) &&
+	    ! continuous) {
 		XCloseDisplay(d);
 		return EXIT_FAILURE;
 	}
