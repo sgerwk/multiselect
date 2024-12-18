@@ -1076,6 +1076,7 @@ int main(int argc, char *argv[]) {
 						exitnext = True;
 					else
 						stayinloop = False;
+					/* fallthrough */
 				case 'd':
 				case XK_F4:
 					printf("delete all selections\n");
