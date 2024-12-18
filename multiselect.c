@@ -703,11 +703,10 @@ int main(int argc, char *argv[]) {
 	}
 	if (f1)
 		GrabKey(d, r, XK_F1, 0);
-	if (daemon || ! daemonother) {
+	if (daemon)
 		GrabKey(d, r, XK_z, ControlMask | ShiftMask);
-		if (f2)
-			GrabKey(d, r, XK_F2, 0);
-	}
+	if (f2)
+		GrabKey(d, r, XK_F2, 0);
 	if (f5)
 		GrabKey(d, r, XK_F5, 0);
 
@@ -1192,7 +1191,7 @@ int main(int argc, char *argv[]) {
 			if (exitnext)
 				break;
 			XUngrabPointer(d, CurrentTime);
-			if (! daemon || daemonother)
+			if (! daemon)
 				stayinloop = 0;
 			break;
 
