@@ -57,11 +57,6 @@ Pressing 'q' or clicking on the X square terminate \fImultiselect\fP.
 .SH ARGUMENTS
 
 .TP
-.B -i
-the next or previous string is pasted immediately after pressing the up and
-down cursor keys, without the need to press 'Enter'
-
-.TP
 .B -d
 keep running even after after the user select another string, to add it
 by cntr-shift-z or by F2, if enabled by \fI-k F2\fP
@@ -76,6 +71,16 @@ implies \fI-d\fP
 .B -f
 send the selection even when the menu has been opened by \fIF1\fP rather than
 pasting; achieved by sending a fake middle mouse click to the root window
+
+.TP
+.B -c
+add a string as soon as it is selected, without pressing \fIctrl-shift x\fP or
+\fIF2\fP
+
+.TP
+.B -i
+the next or previous string is pasted immediately after pressing the up and
+down cursor keys, without the need to press 'Enter'
 
 .TP
 .BI -t " sep

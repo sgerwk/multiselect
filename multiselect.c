@@ -269,6 +269,10 @@ Time GetTimestampForNow(Display *d, Window w) {
  * request the selection
  */
 Bool RequestPrimarySelection(Display *d, Window w) {
+	if (XGetSelectionOwner(d, XA_PRIMARY) == None) {
+		printf("owner is none\n");
+		return False;
+	}
 	if (XGetSelectionOwner(d, XA_PRIMARY) == w) {
 		printf("owner is self\n");
 		return False;
@@ -613,7 +617,7 @@ int main(int argc, char *argv[]) {
 	unsigned int dm;
 
 	int opt;
-	Bool daemon = False, daemonother;
+	Bool daemon = False, daemonother, continuos = False;
 	Bool immediate = False;
 	Bool click = True;
 	Bool f1 = False, f2 = False, f5 = False, force = False;
@@ -624,13 +628,10 @@ int main(int argc, char *argv[]) {
 
 				/* parse arguments */
 
-	while (-1 != (opt = getopt(argc, argv, "dik:fpt:"))) {
+	while (-1 != (opt = getopt(argc, argv, "dk:fcipt:"))) {
 		switch (opt) {
 		case 'd':
 			daemon = True;
-			break;
-		case 'i':
-			immediate = True;
 			break;
 		case 'k':
 			if (! strcmp(optarg, "F1"))
@@ -648,6 +649,13 @@ int main(int argc, char *argv[]) {
 			break;
 		case 'f':
 			force = True;
+			break;
+		case 'c':
+			continuos = True;
+			daemon = True;
+			break;
+		case 'i':
+			immediate = True;
 			break;
 		case 'p':
 			click = False;
@@ -755,9 +763,11 @@ int main(int argc, char *argv[]) {
 	fp.g = XCreateGC(d, f, 0, NULL);
 	XSetFont(d, fp.g, fp.fs->fid);
 
-				/* acquire primary selection */
+				/* get or acquire the primary selection */
 
-	if (AcquirePrimarySelection(d, r, w, &t)) {
+	if (continuos)
+		RequestPrimarySelection(d, w);
+	else if (AcquirePrimarySelection(d, r, w, &t)) {
 		XCloseDisplay(d);
 		return EXIT_FAILURE;
 	}
@@ -960,10 +970,11 @@ int main(int argc, char *argv[]) {
 				printf("selection added: %s\n", buffers[num]);
 				num++;
 			}
-			if (num >= 2 && AcquirePrimarySelection(d, r, w, &t)) {
-				XCloseDisplay(d);
-				return EXIT_FAILURE;
-			}
+			if (num >= 2 || continuos)
+				if (AcquirePrimarySelection(d, r, w, &t)) {
+					XCloseDisplay(d);
+					return EXIT_FAILURE;
+				}
 
 			ResizeWindow(d, f, wp.fs, num);
 			if (showing) {
@@ -1193,6 +1204,16 @@ int main(int argc, char *argv[]) {
 			XUngrabPointer(d, CurrentTime);
 			if (! daemon)
 				stayinloop = 0;
+			if (! continuos)
+				break;
+			if (num >= MAXNUM)
+				break;
+			if (! RequestPrimarySelection(d, w)) {
+				hide = messagehide;
+				message = selectmessage;
+				XMapRaised(d, f);
+			}
+			// -> SelectionNotify
 			break;
 
 		case PropertyNotify:
