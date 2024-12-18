@@ -803,7 +803,6 @@ int main(int argc, char *argv[]) {
 					// -> UnmapNotify
 					continue;
 				}
-				showing = True;
 				e.type = ShowWindow;
 				// -> ShowWindow
 				break;
@@ -858,7 +857,7 @@ int main(int argc, char *argv[]) {
 
 					/* window is on screen */
 
-			if (pending) {
+			if (showing) {
 				printf("window on screen, refusing request\n");
 				RefuseSelection(d, re);
 				break;
@@ -882,6 +881,7 @@ int main(int argc, char *argv[]) {
 				chosen = False;
 				AnswerSelection(d, t, re,
 					buffers, separator, key, False);
+				pending = False;
 				ShortTime(&last, interval, True);
 				break;
 			}
@@ -931,6 +931,7 @@ int main(int argc, char *argv[]) {
 			ResizeWindow(d, w, wp.fs, num);
 			WindowAtPointer(d, w);
 			XMapRaised(d, w);
+			showing = True;
 			// -> Expose
 			break;
 
@@ -1143,6 +1144,7 @@ int main(int argc, char *argv[]) {
 
 		case UnmapNotify:
 			printf("unmap\n");
+			showing = False;
 			if (prev != None) {
 				XGetInputFocus(d, &pprev, &pret);
 				printf("revert focus 0x%lX -> 0x%lX\n",
@@ -1156,19 +1158,14 @@ int main(int argc, char *argv[]) {
 				stayinloop = False;
 				break;
 			}
-			if (pending || (showing && force)) {
-				showing = False;
-				pending = False;
-			}
-			else {
-				showing = False;
+			if (! pending)
 				break;
-			}
 			ShortTime(&last, interval, True);
 			if (! click) {
 				printf("sending selection\n");
 				AnswerSelection(d, t, &request,
 					buffers, separator, key, False);
+				pending = False;
 			}
 			else if (key != -1) {
 				printf("sending middle button click\n");
@@ -1178,6 +1175,7 @@ int main(int argc, char *argv[]) {
 				XWarpPointer(d, None, r, 0, 0, 0, 0, x, y);
 				XTestFakeButtonEvent(d, 2, True, CurrentTime);
 				XTestFakeButtonEvent(d, 2, False, 100);
+				pending = True;
 			}
 			break;
 
