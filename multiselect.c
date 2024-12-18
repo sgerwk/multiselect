@@ -642,6 +642,7 @@ int main(int argc, char *argv[]) {
 				printf("currently supported\n");
 				exit(EXIT_FAILURE);
 			}
+			daemon = True;
 			break;
 		case 'f':
 			force = True;
@@ -658,12 +659,7 @@ int main(int argc, char *argv[]) {
 	}
 	argc -= optind - 1;
 	argv += optind - 1;
-	if (daemon && argc - 1 != 0) {
-		printf("daemon mode: ");
-		printf("no string allowed from the command line\n");
-		exit(EXIT_FAILURE);
-	}
-	else if (argc - 1 == 1 && ! strcmp(argv[1], "-")) {
+	if (argc - 1 == 1 && ! strcmp(argv[1], "-")) {
 		printf("reading selections from stdin\n");
 		buffers = malloc(MAXNUM * sizeof(char *));
 		for (num = 0; num < MAXNUM; num++) {
@@ -1012,6 +1008,7 @@ int main(int argc, char *argv[]) {
 			}
 			key = keyindex(k);
 			printf("key index: %d\n", key);
+			keep = False;
 			if (key >= 0 && key < num && request.requestor != w)
 				printf("pasting %s\n", buffers[key]);
 			else if (k == XK_Up || k == XK_Down) {
@@ -1034,7 +1031,6 @@ int main(int argc, char *argv[]) {
 			else {
 				key = -1;
 				changed = False;
-				keep = False;
 				switch (k) {
 				case XK_BackSpace:
 				case XK_Delete:
@@ -1090,8 +1086,6 @@ int main(int argc, char *argv[]) {
 					// again with a different conversion
 					XSetSelectionOwner(d, XA_PRIMARY,
 						None, CurrentTime);
-					if ((k != 'q' && k != XK_F5) || daemon)
-						break;
 					changed = True;
 					break;
 				}
@@ -1101,6 +1095,7 @@ int main(int argc, char *argv[]) {
 			printf("index: %d\n", key);
 
 			if (keep) {
+				printf("keep window\n");
 				ResizeWindow(d, w, wp.fs, num);
 				draw(d, w, &wp, buffers, num, selected, NULL);
 				break;
@@ -1115,8 +1110,8 @@ int main(int argc, char *argv[]) {
 			XGetGeometry(d, w, &r, &xb, &yb, &dm, &dm, &dm, &dm);
 			XMoveWindow(d, f, xb, yb);
 			ResizeWindow(d, f, wp.fs, num);
-			hide = changehide;
 			XMapRaised(d, f);
+			hide = changehide;
 			ShortTime(&flashtime, 0, True);
 			// -> Expose on the flash window
 
@@ -1195,7 +1190,7 @@ int main(int argc, char *argv[]) {
 			if (exitnext)
 				break;
 			XUngrabPointer(d, CurrentTime);
-			if (! daemon && daemonother)
+			if (! daemon || daemonother)
 				stayinloop = 0;
 			break;
 
