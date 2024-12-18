@@ -67,11 +67,6 @@ keep running even after after the user select another string, to add it
 by cntr-shift-z or by F2, if enabled by \fI-k F2\fP
 
 .TP
-.BI -t " sep
-everything up to the first \fIsep\fP character in each string is displayed in
-the menu but not pasted: see \fILABELS\fP, below
-
-.TP
 .BI -k " (F1|F2|F5)
 enable some function keys even when the string selection menu is not on screen:
 \fIF1\fP to open it, \fIF2\fP to add new string, \fIF5\fP to terminate;
@@ -81,6 +76,11 @@ implies \fI-d\fP
 .B -f
 send the selection even when the menu has been opened by \fIF1\fP rather than
 pasting; achieved by sending a fake middle mouse click to the root window
+
+.TP
+.BI -t " sep
+everything up to the first \fIsep\fP character in each string is displayed in
+the menu but not pasted: see \fILABELS\fP, below
 
 .
 .
