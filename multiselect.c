@@ -1070,15 +1070,18 @@ int main(int argc, char *argv[]) {
 					XSetSelectionOwner(d, XA_PRIMARY,
 						None, CurrentTime);
 					break;
-				case 'd':
-				case XK_F4:
 				case 'q':
 				case XK_F5:
+					if (showing)
+						exitnext = True;
+					else
+						stayinloop = False;
+				case 'd':
+				case XK_F4:
 					printf("delete all selections\n");
 					for (a = 0; a < num; a++)
 						free(buffers[a]);
 					num = 0;
-					changed = True;
 					// disown selection even when exiting
 					// to avoid the requestor to ask it
 					// again with a different conversion
@@ -1086,7 +1089,7 @@ int main(int argc, char *argv[]) {
 						None, CurrentTime);
 					if ((k != 'q' && k != XK_F5) || daemon)
 						break;
-					exitnext = True;
+					changed = True;
 					break;
 				}
 				if (selected >= num)
