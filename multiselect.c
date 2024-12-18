@@ -623,7 +623,7 @@ int main(int argc, char *argv[]) {
 	unsigned int dm;
 
 	int opt;
-	Bool daemon = False, daemonother, continuos = False;
+	Bool daemon = False, daemonother, continuous = False;
 	Bool immediate = False;
 	Bool click = True;
 	Bool f1 = False, f2 = False, f5 = False, force = False;
@@ -657,7 +657,7 @@ int main(int argc, char *argv[]) {
 			force = True;
 			break;
 		case 'c':
-			continuos = True;
+			continuous = True;
 			daemon = True;
 			break;
 		case 'i':
@@ -771,7 +771,7 @@ int main(int argc, char *argv[]) {
 
 				/* get or acquire the primary selection */
 
-	if (continuos)
+	if (continuous)
 		RequestPrimarySelection(d, w);
 	else if (AcquirePrimarySelection(d, r, w, &t)) {
 		XCloseDisplay(d);
@@ -976,7 +976,7 @@ int main(int argc, char *argv[]) {
 				printf("selection added: %s\n", buffers[num]);
 				num++;
 			}
-			if (num >= 2 || continuos)
+			if (num >= 2 || continuous)
 				if (AcquirePrimarySelection(d, r, w, &t)) {
 					XCloseDisplay(d);
 					return EXIT_FAILURE;
@@ -1210,7 +1210,7 @@ int main(int argc, char *argv[]) {
 			XUngrabPointer(d, CurrentTime);
 			if (! daemon)
 				stayinloop = 0;
-			if (! continuos)
+			if (! continuous)
 				break;
 			if (num >= MAXNUM)
 				break;
