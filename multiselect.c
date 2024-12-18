@@ -797,7 +797,7 @@ int main(int argc, char *argv[]) {
 			message = NULL;
 			continue;
 		}
-		if (e.type == KeyPress && ! pending) {
+		if (e.type == KeyPress && ! showing) {
 			printf("keycode: %d\n", e.xkey.keycode);
 			k = XLookupKeysym(&e.xkey, 0);
 			printf("k: %c\n", (unsigned char) k);
