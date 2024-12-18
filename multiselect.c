@@ -637,6 +637,8 @@ int main(int argc, char *argv[]) {
 				f1 = True;
 			else if (! strcmp(optarg, "F2"))
 				f2 = True;
+			else if (! strcmp(optarg, "F5"))
+				f5 = True;
 			else {
 				printf("only F1, F2 and F5 ");
 				printf("currently supported\n");
