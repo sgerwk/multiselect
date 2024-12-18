@@ -1106,16 +1106,16 @@ int main(int argc, char *argv[]) {
 			XUnmapWindow(d, w);
 			// -> UnmapNotify
 
-			if (changed) {
-				XGetGeometry(d, w, &r, &xb, &yb,
-					&dm, &dm, &dm, &dm);
-				XMoveWindow(d, f, xb, yb);
-				ResizeWindow(d, f, wp.fs, num);
-				hide = changehide;
-				XMapRaised(d, f);
-				ShortTime(&flashtime, 0, True);
-				// -> Expose on the flash window
-			}
+			if (! changed || exitnext || ! stayinloop)
+				break;
+
+			XGetGeometry(d, w, &r, &xb, &yb, &dm, &dm, &dm, &dm);
+			XMoveWindow(d, f, xb, yb);
+			ResizeWindow(d, f, wp.fs, num);
+			hide = changehide;
+			XMapRaised(d, f);
+			ShortTime(&flashtime, 0, True);
+			// -> Expose on the flash window
 
 			break;
 
