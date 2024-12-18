@@ -1107,7 +1107,8 @@ int main(int argc, char *argv[]) {
 			// -> UnmapNotify
 
 			if (changed) {
-				XGetGeometry(d, w, &r, &xb, &yb, &dm, &dm, &dm, &dm);
+				XGetGeometry(d, w, &r, &xb, &yb,
+					&dm, &dm, &dm, &dm);
 				XMoveWindow(d, f, xb, yb);
 				ResizeWindow(d, f, wp.fs, num);
 				hide = changehide;
