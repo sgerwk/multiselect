@@ -610,7 +610,7 @@ int main(int argc, char *argv[]) {
 	int ret, pret;
 	int key;
 	int x, y, xb, yb;
-	unsigned int dummy;
+	unsigned int dm;
 
 	int opt;
 	Bool daemon = False, daemonother;
@@ -619,6 +619,8 @@ int main(int argc, char *argv[]) {
 	Bool f1 = False, f2 = False, force = False;
 	char **buffers, separator, *terminator;
 	int a, num;
+
+	(void) dm;
 
 				/* parse arguments */
 
@@ -965,8 +967,7 @@ int main(int argc, char *argv[]) {
 
 			ResizeWindow(d, f, wp.fs, num);
 			if (showing) {
-				XGetGeometry(d, w, &r, &xb, &yb,
-					&dummy, &dummy, &dummy, &dummy);
+				XGetGeometry(d, w, &r, &xb, &yb, &dm, &dm, &dm, &dm);
 				XMoveWindow(d, f, xb, yb);
 				XUnmapWindow(d, w);
 				// -> UnmapNotify
@@ -1099,8 +1100,7 @@ int main(int argc, char *argv[]) {
 			// -> UnmapNotify
 
 			if (changed) {
-				XGetGeometry(d, w, &r, &xb, &yb,
-					&dummy, &dummy, &dummy, &dummy);
+				XGetGeometry(d, w, &r, &xb, &yb, &dm, &dm, &dm, &dm);
 				XMoveWindow(d, f, xb, yb);
 				ResizeWindow(d, f, wp.fs, num);
 				hide = changehide;
