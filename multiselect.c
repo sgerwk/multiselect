@@ -1011,6 +1011,7 @@ int main(int argc, char *argv[]) {
 				break;
 			}
 			key = keyindex(k);
+			printf("key index: %d\n", key);
 			if (key >= 0 && key < num && request.requestor != w)
 				printf("pasting %s\n", buffers[key]);
 			else if (k == XK_Up || k == XK_Down) {
@@ -1097,6 +1098,7 @@ int main(int argc, char *argv[]) {
 				if (selected >= num)
 					selected = num - 1;
 			}
+			printf("index: %d\n", key);
 
 			if (keep) {
 				ResizeWindow(d, w, wp.fs, num);
