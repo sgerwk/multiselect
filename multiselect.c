@@ -791,8 +791,6 @@ int main(int argc, char *argv[]) {
 		if (e.type == Expose && e.xexpose.window == f) {
 			printf("expose on the flash window\n");
 			draw(d, f, &fp, buffers, num, selected, message);
-			if (showing)
-				continue;
 			XFlush(d);
 			usleep(hide);
 			XUnmapWindow(d, f);
