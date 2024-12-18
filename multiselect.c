@@ -15,6 +15,12 @@
  */
 
 /*
+ * state variables
+ * 	pending		a program requests the selection, which is not sent yet
+ * 	showing		the selection menu is on the screen
+ */
+
+/*
  * shorttime
  *
  * ideally, checking how much time passed should not be necessary: a request
@@ -943,7 +949,7 @@ int main(int argc, char *argv[]) {
 			ResizeWindow(d, w, wp.fs, num);
 			WindowAtPointer(d, w);
 			XMapRaised(d, w);
-			showing = True;
+			// -> MapNotify
 			// -> Expose
 			break;
 
@@ -1224,6 +1230,8 @@ int main(int argc, char *argv[]) {
 
 		case MapNotify:
 			printf("map notify\n");
+			if (e.xmap.window == w)
+				showing = True;
 			break;
 
 		case MapRequest:
