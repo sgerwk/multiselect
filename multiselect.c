@@ -616,7 +616,7 @@ int main(int argc, char *argv[]) {
 	Bool daemon = False, daemonother;
 	Bool immediate = False;
 	Bool click = True;
-	Bool f1 = False, f2 = False, force = False;
+	Bool f1 = False, f2 = False, f5 = False, force = False;
 	char **buffers, separator, *terminator;
 	int a, num;
 
@@ -637,8 +637,11 @@ int main(int argc, char *argv[]) {
 				f1 = True;
 			else if (! strcmp(optarg, "F2"))
 				f2 = True;
-			else
-				printf("only F1 and F2 currently supported\n");
+			else {
+				printf("only F1, F2 and F5 ");
+				printf("currently supported\n");
+				exit(EXIT_FAILURE);
+			}
 			break;
 		case 'f':
 			force = True;
@@ -707,6 +710,8 @@ int main(int argc, char *argv[]) {
 		if (f2)
 			GrabKey(d, r, XK_F2, 0);
 	}
+	if (f5)
+		GrabKey(d, r, XK_F5, 0);
 
 				/* create the window and select input */
 
@@ -1096,7 +1101,7 @@ int main(int argc, char *argv[]) {
 				break;
 			}
 
-			XUnmapWindow(d, e.xkey.window);
+			XUnmapWindow(d, w);
 			// -> UnmapNotify
 
 			if (changed) {
