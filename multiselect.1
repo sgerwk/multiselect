@@ -49,7 +49,7 @@ Pressing 'z' or F2 or clicking the V square adds the current selection to the
 list. Pressing Delete or Backspace deletes the string under the cursor.
 Pressing 's' or F3 delete the last string, 'd' or F4 delete all of them.
 Pressing any other key or clicking on the header causes no string to be pasted.
-Pression 'q' or clicking on the X square terminate \fImultiselect\fP.
+Pressing 'q' or clicking on the X square terminate \fImultiselect\fP.
 
 .
 .
@@ -63,8 +63,8 @@ down cursor keys, without the need to press 'Enter'
 
 .TP
 .B -d
-keep running even after after the user acquires the selection, so that the user
-can add selected strings by cntr-shift-z or by F2, if enabled by \fI-k F2\P
+keep running even after after the user select another string, to add it
+by cntr-shift-z or by F2, if enabled by \fI-k F2\fP
 
 .TP
 .BI -t " sep
@@ -72,9 +72,10 @@ everything up to the first \fIsep\fP character in each string is displayed in
 the menu but not pasted: see \fILABELS\fP, below
 
 .TP
-.BI -k " (F1|F2)
-enable the \fIF1\fP or the \fIF2\fP key to open the selection menu and add a
-new string
+.BI -k " (F1|F2|F5)
+enable some function keys even when the string selection menu is not on screen:
+\fIF1\fP to open it, \fIF2\fP to add new string, \fIF5\fP to terminate;
+implies \fI-d\fP
 
 .TP
 .B -f
@@ -102,8 +103,8 @@ middle-clicking or pressing \fIF1\fP (if enabled by \fI-k F1\fP), the keys for
 adding the current selection are 'z' and \fIF2\fP, for deleting the string
 under the cursor are Backspace and Delete, for deleting the last string are 's'
 and \fIF3\fP, for deleting all strings are 'd' and \fIF4\fP. When the menu is
-not shown, ctrl-shift-z adds the current selection to the list. The same does
-\fIF2\fP if enabled by \fI-k F2\fP.
+not shown, ctrl-shift-z adds the current selection to the list if enabled by
+\fI-f\fP. The same does \fIF2\fP if enabled by \fI-k F2\fP.
 
 .
 .
@@ -161,7 +162,8 @@ terminates \fImultiselect\fP so that the script proceeds to the second line.
 The strings "John Smith", "2030 Blue Ave" and "Simonville IL" are scattered
 around a text file, hard to be found by scripts.
 
-Open the text file and start \fImultiselect\fP with no argument.
+Open the text file and start \fImultiselect\fP with argument \fI-d\fP or
+\fI-kF2\fP.
 
 Select "John Smith" in the text file and press ctrl-shift-z. Then, select "2030
 Blue Ave" and press ctrl-shift-z. Finally, select "Simonville IL" and press
