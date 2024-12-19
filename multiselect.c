@@ -1051,6 +1051,18 @@ int main(int argc, char *argv[]) {
 				key = -1;
 				changed = False;
 				switch (k) {
+				case 'z':
+				case XK_F2:
+					printf("add new selection %d\n", num);
+					if (num >= MAXNUM)
+						break;
+					if (! RequestPrimarySelection(d, w)) {
+						hide = messagehide;
+						message = selectmessage;
+						XMapRaised(d, f);
+					}
+					// -> SelectionNotify
+					break;
 				case XK_BackSpace:
 				case XK_Delete:
 					if (selected == -1) {
@@ -1064,18 +1076,6 @@ int main(int argc, char *argv[]) {
 					num--;
 					if (num > 0 || daemon)
 						keep = True;
-					break;
-				case 'z':
-				case XK_F2:
-					printf("add new selection %d\n", num);
-					if (num >= MAXNUM)
-						break;
-					if (! RequestPrimarySelection(d, w)) {
-						hide = messagehide;
-						message = selectmessage;
-						XMapRaised(d, f);
-					}
-					// -> SelectionNotify
 					break;
 				case 's':
 				case XK_F3:
