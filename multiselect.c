@@ -142,6 +142,26 @@
 #define WMNAMEDAEMON "multiselectd"
 
 /*
+ * print window name
+ */
+void PrintWindow(Display *d, Window w, Window m, Window f) {
+	char *p;
+	if (w == m)
+		printf("multiselect window\n");
+	else if (w == f)
+		printf("flash window\n");
+	else if (w == None)
+		printf("None\n");
+	else if (XFetchName(d, w, &p) != Success)
+		printf("unknown\n");
+	else {
+		printf("%s\n", p);
+		XFree(p);
+	}
+}
+
+
+/*
  * check the existence of a window with a certain name
  */
 Bool WindowNameExists(Display *d, Window root, char *name) {
@@ -1169,12 +1189,7 @@ int main(int argc, char *argv[]) {
 
 		case UnmapNotify:
 			printf("unmap notify: ");
-			if (e.xunmap.event == w)
-				printf("multiselect window\n");
-			else if (e.xunmap.event == f)
-				printf("flash window\n");
-			else
-				printf("unknown window\n");
+			PrintWindow(d, e.xmap.event, w, f);
 			if (prev == None)
 				printf("no previous focus owner\n");
 			else {
@@ -1250,12 +1265,7 @@ int main(int argc, char *argv[]) {
 
 		case MapNotify:
 			printf("map notify: ");
-			if (e.xmap.event == w)
-				printf("multiselect window\n");
-			else if (e.xmap.event == f)
-				printf("flash window\n");
-			else
-				printf("unknown window\n");
+			PrintWindow(d, e.xmap.event, w, f);
 			if (e.xmap.window == w)
 				showing = True;
 			break;
@@ -1285,7 +1295,7 @@ int main(int argc, char *argv[]) {
 
 	// disown the selection so that the requestor does not ask it again
 	// with a different conversion
-	printf("diswon the selection\n");
+	printf("disown the selection\n");
 	XSetSelectionOwner(d, XA_PRIMARY, None, CurrentTime);
 
 	XDestroyWindow(d, w);
