@@ -1169,6 +1169,8 @@ int main(int argc, char *argv[]) {
 
 		case UnmapNotify:
 			printf("unmap\n");
+			if (e.xmap.window != w)
+				break;
 			showing = False;
 			if (prev != None) {
 				XGetInputFocus(d, &pprev, &pret);
