@@ -18,6 +18,7 @@ multiselect - a multiple selections server for X11
 [\fI-f\fP]
 [\fI-p\fP]
 [\fI-t sep\fP]
+[\fI-e ext\fP]
 [-|\fIstring ...\fP]
 
 .
@@ -91,6 +92,12 @@ the menu but not pasted; see \fILABELS\fP, below
 .B -p
 paste mode: send the selection as soon as the user chooses it;
 see \fICLICK MODE AND PASTE MODE\fP, below
+
+.TP
+.BI -e " external
+call an external program to do the actual pasting; the requestor window and the
+string to be pasted replace \fI%d\fP and \fI%s\fP in \fIexternal\fP, in this
+order
 
 .TP
 .B -h
