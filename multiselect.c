@@ -1023,31 +1023,11 @@ int main(int argc, char *argv[]) {
 			printf("keycode: %d\n", e.xkey.keycode);
 			k = XLookupKeysym(&e.xkey, 0);
 			printf("k: %c\n", (unsigned char) k);
-			if (! pending) {
-				switch (k) {
-				case 'z':
-				case XK_F2:
-					printf("add new selection %d\n", num);
-					if (num >= MAXNUM)
-						break;
-					if (! RequestPrimarySelection(d, w)) {
-						hide = messagehide;
-						message = selectmessage;
-						XMapRaised(d, f);
-					}
-					// -> SelectionNotify
-					break;
-				}
-			}
-			if (! pending &&
-			    ! (showing && force) &&
-			    k != 'q' && k != XK_F5) {
-				printf("no pending request\n");
-				break;
-			}
+			printf("pending: %d\n", pending);
 			key = keyindex(k);
 			printf("key index: %d\n", key);
 			keep = False;
+			changed = False;
 			if (key >= 0 && key < num && request.requestor != w)
 				printf("pasting %s\n", buffers[key]);
 			else if (k == XK_Up || k == XK_Down) {
@@ -1082,14 +1062,20 @@ int main(int argc, char *argv[]) {
 					for (a = selected; a < num - 1; a++)
 						buffers[a] = buffers[a + 1];
 					num--;
-					keep = True;
-					if (num > 0)
+					if (num > 0 || daemon)
+						keep = True;
+					break;
+				case 'z':
+				case XK_F2:
+					printf("add new selection %d\n", num);
+					if (num >= MAXNUM)
 						break;
-					// retain the selection if num==1 since
-					// the previous owner has already lost
-					// it at this point
-					XSetSelectionOwner(d, XA_PRIMARY,
-						None, CurrentTime);
+					if (! RequestPrimarySelection(d, w)) {
+						hide = messagehide;
+						message = selectmessage;
+						XMapRaised(d, f);
+					}
+					// -> SelectionNotify
 					break;
 				case 's':
 				case XK_F3:
@@ -1098,14 +1084,8 @@ int main(int argc, char *argv[]) {
 						num--;
 						free(buffers[num]);
 					}
-					keep = True;
-					if (num > 0)
-						break;
-					// retain the selection if num==1 since
-					// the previous owner has already lost
-					// it at this point
-					XSetSelectionOwner(d, XA_PRIMARY,
-						None, CurrentTime);
+					if (daemon)
+						keep = True;
 					break;
 				case 'q':
 				case XK_F5:
@@ -1121,17 +1101,22 @@ int main(int argc, char *argv[]) {
 						free(buffers[a]);
 					num = 0;
 					changed = True;
-					// disown selection even when exiting
-					// to avoid the requestor to ask it
-					// again with a different conversion
-					XSetSelectionOwner(d, XA_PRIMARY,
-						None, CurrentTime);
 					break;
 				}
 				if (selected >= num)
 					selected = num - 1;
 			}
 			printf("index: %d\n", key);
+			
+			if ((num == 0 && ! daemon) || (exitnext || ! stayinloop)) {
+				// 1. retain the selection if num==1 since the
+				//    previous owner lost it at this point
+				// 2. disown selection even when exiting
+				//    to avoid the requestor to ask it again
+				//    with a different conversion
+				printf("diswon the selection\n");
+				XSetSelectionOwner(d, XA_PRIMARY, None, CurrentTime);
+			}
 
 			if (keep) {
 				printf("keep window\n");
@@ -1199,8 +1184,6 @@ int main(int argc, char *argv[]) {
 				XSetInputFocus(d, prev, ret, CurrentTime);
 				prev = None;
 			}
-			if (e.xmap.window != w)
-				break;
 			showing = False;
 			XUngrabPointer(d, CurrentTime);
 			if (exitnext) {
@@ -1208,7 +1191,7 @@ int main(int argc, char *argv[]) {
 				stayinloop = False;
 				break;
 			}
-			if (! pending)
+			if (! pending && ! force)
 				break;
 			ShortTime(&last, interval, True);
 			if (! click) {
@@ -1233,10 +1216,14 @@ int main(int argc, char *argv[]) {
 			printf("selection clear from ");
 			printf("0x%lX\n", e.xselection.requestor);
 			XUngrabPointer(d, CurrentTime);
-			if (exitnext)
+			if (exitnext) {
+				printf("exit next\n");
 				break;
-			if (! daemon)
-				stayinloop = 0;
+			}
+			if (! daemon) {
+				printf("no daemon mode, exit next\n");
+				exitnext = 1;
+			}
 			if (! continuous)
 				break;
 			if (num >= MAXNUM)
