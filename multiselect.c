@@ -1097,7 +1097,6 @@ int main(int argc, char *argv[]) {
 					if (num > 0) {
 						num--;
 						free(buffers[num]);
-						changed = True;
 					}
 					keep = True;
 					if (num > 0)
@@ -1121,12 +1120,12 @@ int main(int argc, char *argv[]) {
 					for (a = 0; a < num; a++)
 						free(buffers[a]);
 					num = 0;
+					changed = True;
 					// disown selection even when exiting
 					// to avoid the requestor to ask it
 					// again with a different conversion
 					XSetSelectionOwner(d, XA_PRIMARY,
 						None, CurrentTime);
-					changed = True;
 					break;
 				}
 				if (selected >= num)
@@ -1147,6 +1146,7 @@ int main(int argc, char *argv[]) {
 			if (! changed || exitnext || ! stayinloop)
 				break;
 
+			printf("window changed, showing the flash window\n");
 			XGetGeometry(d, w, &r, &xb, &yb, &dm, &dm, &dm, &dm);
 			XMoveWindow(d, f, xb, yb);
 			ResizeWindow(d, f, wp.fs, num);
@@ -1190,16 +1190,18 @@ int main(int argc, char *argv[]) {
 
 		case UnmapNotify:
 			printf("unmap\n");
-			if (e.xmap.window != w)
-				break;
-			showing = False;
-			if (prev != None) {
+			if (prev == None)
+				printf("no previous focus owner\n");
+			else {
 				XGetInputFocus(d, &pprev, &pret);
 				printf("revert focus 0x%lX -> 0x%lX\n",
 					pprev, prev);
 				XSetInputFocus(d, prev, ret, CurrentTime);
 				prev = None;
 			}
+			if (e.xmap.window != w)
+				break;
+			showing = False;
 			XUngrabPointer(d, CurrentTime);
 			if (exitnext) {
 				printf("exiting\n");
@@ -1228,10 +1230,11 @@ int main(int argc, char *argv[]) {
 			break;
 
 		case SelectionClear:
-			printf("selection clear\n");
+			printf("selection clear from ");
+			printf("0x%lX\n", e.xselection.requestor);
+			XUngrabPointer(d, CurrentTime);
 			if (exitnext)
 				break;
-			XUngrabPointer(d, CurrentTime);
 			if (! daemon)
 				stayinloop = 0;
 			if (! continuous)
@@ -1239,6 +1242,7 @@ int main(int argc, char *argv[]) {
 			if (num >= MAXNUM)
 				break;
 			if (! RequestPrimarySelection(d, w)) {
+				printf("requesting the primary selection\n");
 				hide = messagehide;
 				message = selectmessage;
 				XMapRaised(d, f);
