@@ -146,20 +146,20 @@
  */
 void PrintWindow(Display *d, Window w, Window m, Window f) {
 	char *p;
+	printf("0x%lX", w);
 	if (w == m)
-		printf("multiselect window\n");
+		printf(" multiselect window\n");
 	else if (w == f)
-		printf("flash window\n");
+		printf(" flash window\n");
 	else if (w == None)
-		printf("None\n");
+		printf(" None\n");
 	else if (XFetchName(d, w, &p) != Success)
-		printf("unknown\n");
+		printf(" unknown\n");
 	else {
-		printf("%s\n", p);
+		printf(" %s\n", p);
 		XFree(p);
 	}
 }
-
 
 /*
  * check the existence of a window with a certain name
