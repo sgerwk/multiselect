@@ -1019,8 +1019,8 @@ int main(int argc, char *argv[]) {
 				}
 			}
 			if (! pending &&
-			    k != 'q' && k != XK_F5 &&
-			    ! (showing && force)) {
+			    ! (showing && force) &&
+			    k != 'q' && k != XK_F5) {
 				printf("no pending request\n");
 				break;
 			}
