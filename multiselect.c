@@ -193,7 +193,7 @@ Bool GrabKey(Display *d, Window r, KeySym keysym, unsigned int modifiers) {
 	if (res == True)
 		printf("grabbed key %ld\n", keysym);
 	else
-		printf("grabbing of key %ld failed\n", keysym);
+		printf("grabbing key %ld failed\n", keysym);
 	return res;
 }
 
@@ -624,7 +624,7 @@ int main(int argc, char *argv[]) {
 	XSetWindowAttributes swa;
 
 	Time t;
-	struct timeval last, flashtime;
+	struct timeval last;
 	int interval = 80000, hide;
 	int starthide = 800000, changehide = 500000, messagehide = 800000;
 	char *message = NULL, *selectmessage = "select a string first";
@@ -676,6 +676,8 @@ int main(int argc, char *argv[]) {
 			break;
 		case 'f':
 			force = True;
+			daemon = True;
+			f1 = True;
 			break;
 		case 'c':
 			continuous = True;
@@ -756,6 +758,9 @@ int main(int argc, char *argv[]) {
 		XCloseDisplay(d);
 		exit(EXIT_FAILURE);
 	}
+
+				/* grab keys */
+
 	if (f1)
 		GrabKey(d, r, XK_F1, 0);
 	if (daemon)
@@ -765,7 +770,7 @@ int main(int argc, char *argv[]) {
 	if (f5)
 		GrabKey(d, r, XK_F5, 0);
 
-				/* create the window and select input */
+				/* multiselect window */
 
 	swa.background_pixel = WhitePixelOfScreen(s);
 	swa.override_redirect = True;
@@ -810,7 +815,7 @@ int main(int argc, char *argv[]) {
 	fp.g = XCreateGC(d, f, 0, NULL);
 	XSetFont(d, fp.g, fp.fs->fid);
 
-				/* get or acquire the primary selection */
+				/* get the selection or acquire ownership */
 
 	if (((continuous && RequestPrimarySelection(d, w)) ||
 	    AcquirePrimarySelection(d, r, w, &t)) &&
@@ -867,10 +872,6 @@ int main(int argc, char *argv[]) {
 				// -> ShowWindow
 				break;
 			}
-		}
-		if (! ShortTime(&flashtime, hide, False)) {
-			printf("short time expired, hiding flash window\n");
-			XUnmapWindow(d, f);
 		}
 
 		switch (e.type) {
@@ -1036,7 +1037,6 @@ int main(int argc, char *argv[]) {
 				WindowAtPointer(d, f);
 			hide = changehide;
 			XMapRaised(d, f);
-			ShortTime(&flashtime, 0, True);
 			// -> Expose on the flash window
 			break;
 
@@ -1079,7 +1079,7 @@ int main(int argc, char *argv[]) {
 					if (! RequestPrimarySelection(d, w)) {
 						hide = messagehide;
 						message = selectmessage;
-						XMapRaised(d, f);
+						changed = True;
 					}
 					// -> SelectionNotify
 					break;
@@ -1149,9 +1149,8 @@ int main(int argc, char *argv[]) {
 			XGetGeometry(d, w, &r, &xb, &yb, &dm, &dm, &dm, &dm);
 			XMoveWindow(d, f, xb, yb);
 			ResizeWindow(d, f, wp.fs, num);
-			XMapRaised(d, f);
 			hide = changehide;
-			ShortTime(&flashtime, 0, True);
+			XMapRaised(d, f);
 			// -> Expose on the flash window
 
 			break;
@@ -1163,7 +1162,7 @@ int main(int argc, char *argv[]) {
 			printf("x=%d y=%d\n", xb, yb);
 			il = wp.fs->ascent + wp.fs->descent;
 			key = yb / il - 1;
-			if (key == -1 && ! daemon) {
+			if (key == -1) {
 				XGetWindowAttributes(d,
 					e.xbutton.window, &wa);
 				if (xb >= wa.width - 6 - 2 * il &&
@@ -1190,8 +1189,10 @@ int main(int argc, char *argv[]) {
 		case UnmapNotify:
 			printf("unmap notify: ");
 			PrintWindow(d, e.xmap.event, w, f);
-			if (prev == None)
+			if (prev == None) {
 				printf("no previous focus owner\n");
+				XSetInputFocus(d, r, ret, CurrentTime);
+			}
 			else {
 				XGetInputFocus(d, &pprev, &pret);
 				printf("revert focus 0x%lX -> 0x%lX\n",
@@ -1249,7 +1250,7 @@ int main(int argc, char *argv[]) {
 			if (num >= MAXNUM)
 				break;
 			if (! RequestPrimarySelection(d, w)) {
-				printf("requesting the primary selection\n");
+				printf("requested the primary selection\n");
 				hide = messagehide;
 				message = selectmessage;
 				XMapRaised(d, f);
