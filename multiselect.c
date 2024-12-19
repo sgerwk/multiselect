@@ -1075,6 +1075,8 @@ int main(int argc, char *argv[]) {
 					num--;
 					if (num > 0 || daemon)
 						keep = True;
+					else
+						changed = True;
 					break;
 				case 's':
 				case XK_F3:
@@ -1085,6 +1087,8 @@ int main(int argc, char *argv[]) {
 					}
 					if (daemon)
 						keep = True;
+					else
+						changed = True;
 					break;
 				case 'q':
 				case XK_F5:
