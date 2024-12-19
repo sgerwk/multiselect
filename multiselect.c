@@ -876,8 +876,9 @@ int main(int argc, char *argv[]) {
 
 		switch (e.type) {
 		case SelectionRequest:
-			printf("selection request ");
-			printf("from 0x%lX, ", e.xselectionrequest.requestor);
+			printf("selection request from ");
+			PrintWindow(d, e.xselectionrequest.requestor, w, f);
+			printf("target: ");
 			PrintAtomName(d, e.xselectionrequest.target);
 			printf("\n");
 
@@ -1235,7 +1236,7 @@ int main(int argc, char *argv[]) {
 
 		case SelectionClear:
 			printf("selection clear from ");
-			printf("0x%lX\n", e.xselection.requestor);
+			PrintWindow(d, e.xselection.requestor, w, f);
 			XUngrabPointer(d, CurrentTime);
 			if (exitnext) {
 				printf("exit next\n");
@@ -1260,7 +1261,7 @@ int main(int argc, char *argv[]) {
 
 		case PropertyNotify:
 			printf("property notify ");
-			printf("window 0x%lX ", e.xproperty.window);
+			PrintWindow(d, e.xproperty.window, w, f);
 			printf("state %d\n", e.xproperty.state);
 			break;
 
