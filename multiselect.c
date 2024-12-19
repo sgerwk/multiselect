@@ -627,6 +627,7 @@ int main(int argc, char *argv[]) {
 	Bool immediate = False;
 	Bool click = True;
 	Bool f1 = False, f2 = False, f5 = False, force = False;
+	Bool usage = False;
 	char **buffers, separator, *terminator;
 	int a, num;
 
@@ -634,7 +635,7 @@ int main(int argc, char *argv[]) {
 
 				/* parse arguments */
 
-	while (-1 != (opt = getopt(argc, argv, "dk:fcipt:"))) {
+	while (-1 != (opt = getopt(argc, argv, "dk:fcit:ph"))) {
 		switch (opt) {
 		case 'd':
 			daemon = True;
@@ -669,6 +670,9 @@ int main(int argc, char *argv[]) {
 		case 't':
 			separator = optarg[0];
 			break;
+		case 'h':
+			usage = True;
+			break;
 		default:
 			exit(EXIT_FAILURE);
 		}
@@ -694,6 +698,23 @@ int main(int argc, char *argv[]) {
 		buffers = malloc(MAXNUM * sizeof(char *));
 		for (a = 0; a < num; a++)
 			buffers[a] = strdup(argv[a + 1]);
+	}
+
+				/* usage */
+
+	if (usage) {
+		printf("multiple selection chooser\n");
+		printf("usage:\n");
+		printf("\tmultiselect [options] (-|string...)\n");
+		printf("\toptions:\n");
+		printf("\t\t-d\tkeep running to add new strings\n");
+		printf("\t\t-k Fx\tenable a function key\n");
+		printf("\t\t-c\tadd selected string immediately\n");
+		printf("\t\t-i\tpaste immediately on up and down\n");
+		printf("\t\t-t sep\tlabel separator\n");
+		printf("\t\t-p\tpaste mode\n");
+		printf("\t\t-h\tthis help\n");
+		return EXIT_SUCCESS;
 	}
 
 				/* open display */
