@@ -1078,6 +1078,7 @@ int main(int argc, char *argv[]) {
 						free(buffers[num]);
 						changed = True;
 					}
+					keep = True;
 					if (num > 0)
 						break;
 					// retain the selection if num==1 since
