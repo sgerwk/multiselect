@@ -764,7 +764,7 @@ int main(int argc, char *argv[]) {
 		CopyFromParent, CopyFromParent, CopyFromParent,
 		CWBackPixel | CWOverrideRedirect, &swa);
 	printf("flash window: 0x%lx\n", f);
-	XSelectInput(d, f, ExposureMask);
+	XSelectInput(d, f, ExposureMask | StructureNotifyMask);
 
 				/* print strings and instructions */
 
@@ -827,6 +827,7 @@ int main(int argc, char *argv[]) {
 			draw(d, f, &fp, buffers, num, selected, message);
 			XFlush(d);
 			usleep(hide);
+			printf("unmapping the flash window\n");
 			XUnmapWindow(d, f);
 			message = NULL;
 			continue;
@@ -1111,16 +1112,6 @@ int main(int argc, char *argv[]) {
 			}
 			printf("index: %d\n", key);
 			
-			if ((num == 0 && ! daemon) || (exitnext || ! stayinloop)) {
-				// 1. retain the selection if num==1 since the
-				//    previous owner lost it at this point
-				// 2. disown selection even when exiting
-				//    to avoid the requestor to ask it again
-				//    with a different conversion
-				printf("diswon the selection\n");
-				XSetSelectionOwner(d, XA_PRIMARY, None, CurrentTime);
-			}
-
 			if (keep) {
 				printf("keep window open\n");
 				ResizeWindow(d, w, wp.fs, num);
@@ -1177,11 +1168,13 @@ int main(int argc, char *argv[]) {
 			break;
 
 		case UnmapNotify:
-			printf("unmap\n");
+			printf("unmap notify: ");
 			if (e.xunmap.event == w)
 				printf("multiselect window\n");
 			else if (e.xunmap.event == f)
 				printf("flash window\n");
+			else
+				printf("unknown window\n");
 			if (prev == None)
 				printf("no previous focus owner\n");
 			else {
@@ -1191,7 +1184,12 @@ int main(int argc, char *argv[]) {
 				XSetInputFocus(d, prev, ret, CurrentTime);
 				prev = None;
 			}
-			showing = False;
+			if (e.xunmap.window == w)
+				showing = False;
+			if (e.xunmap.window == f && (num == 0 && ! daemon)) {
+				stayinloop = 0;
+				break;
+			}
 			XUngrabPointer(d, CurrentTime);
 			if (exitnext) {
 				printf("exiting\n");
@@ -1251,7 +1249,13 @@ int main(int argc, char *argv[]) {
 			break;
 
 		case MapNotify:
-			printf("map notify\n");
+			printf("map notify: ");
+			if (e.xmap.event == w)
+				printf("multiselect window\n");
+			else if (e.xmap.event == f)
+				printf("flash window\n");
+			else
+				printf("unknown window\n");
 			if (e.xmap.window == w)
 				showing = True;
 			break;
@@ -1278,6 +1282,11 @@ int main(int argc, char *argv[]) {
 
 		fflush(stdout);
 	}
+
+	// disown the selection so that the requestor does not ask it again
+	// with a different conversion
+	printf("diswon the selection\n");
+	XSetSelectionOwner(d, XA_PRIMARY, None, CurrentTime);
 
 	XDestroyWindow(d, w);
 	XCloseDisplay(d);
