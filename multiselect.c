@@ -1192,7 +1192,7 @@ int main(int argc, char *argv[]) {
 			PrintWindow(d, e.xmap.event, w, f);
 			if (prev == None) {
 				printf("no previous focus owner\n");
-				XSetInputFocus(d, r, ret, CurrentTime);
+				XSetInputFocus(d, PointerRoot, 0, CurrentTime);
 			}
 			else {
 				XGetInputFocus(d, &pprev, &pret);
