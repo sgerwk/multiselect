@@ -1049,7 +1049,6 @@ int main(int argc, char *argv[]) {
 			}
 			else {
 				key = -1;
-				changed = False;
 				switch (k) {
 				case 'z':
 				case XK_F2:
