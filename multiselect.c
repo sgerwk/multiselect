@@ -1118,7 +1118,7 @@ int main(int argc, char *argv[]) {
 			}
 
 			if (keep) {
-				printf("keep window\n");
+				printf("keep window open\n");
 				ResizeWindow(d, w, wp.fs, num);
 				draw(d, w, &wp, buffers, num, selected, NULL);
 				break;
@@ -1174,6 +1174,10 @@ int main(int argc, char *argv[]) {
 
 		case UnmapNotify:
 			printf("unmap\n");
+			if (e.xunmap.event == w)
+				printf("multiselect window\n");
+			else if (e.xunmap.event == f)
+				printf("flash window\n");
 			if (prev == None)
 				printf("no previous focus owner\n");
 			else {
