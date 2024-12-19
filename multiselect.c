@@ -442,8 +442,10 @@ Bool SendSelection(Display *d, Time t, XSelectionRequestEvent *re,
  * answer a request for the selection
  */
 Bool AnswerSelection(Display *d, Time t, XSelectionRequestEvent *request,
-		char **buffers, char separator, int key, int stringonly) {
+		char **buffers, char separator, int key, int stringonly,
+		char *external) {
 	char *selection, *start;
+	char *call;
 
 	if (key == -1) {
 		RefuseSelection(d, request);
@@ -455,6 +457,12 @@ Bool AnswerSelection(Display *d, Time t, XSelectionRequestEvent *request,
 	else {
 		start = strchr(buffers[key], separator);
 		selection = start ? start + 1 : buffers[key];
+	}
+	if (external) {
+		call = malloc(strlen(external) + 30);
+		sprintf(call, external, request->requestor, selection);
+		printf("calling %s\n", call);
+		return system(call);
 	}
 	return SendSelection(d, t, request,
 		selection, strlen(selection), stringonly);
@@ -648,14 +656,14 @@ int main(int argc, char *argv[]) {
 	Bool click = True;
 	Bool f1 = False, f2 = False, f5 = False, force = False;
 	Bool usage = False;
-	char **buffers, separator, *terminator;
+	char **buffers, separator, *terminator, *external = NULL;
 	int a, num;
 
 	(void) dm;
 
 				/* parse arguments */
 
-	while (-1 != (opt = getopt(argc, argv, "dk:fcit:ph"))) {
+	while (-1 != (opt = getopt(argc, argv, "dk:fcit:pe:h"))) {
 		switch (opt) {
 		case 'd':
 			daemon = True;
@@ -691,6 +699,9 @@ int main(int argc, char *argv[]) {
 			break;
 		case 't':
 			separator = optarg[0];
+			break;
+		case 'e':
+			external = optarg;
 			break;
 		case 'h':
 			usage = True;
@@ -735,6 +746,7 @@ int main(int argc, char *argv[]) {
 		printf("\t\t-i\tpaste immediately on up and down\n");
 		printf("\t\t-t sep\tlabel separator\n");
 		printf("\t\t-p\tpaste mode\n");
+		printf("\t\t-e ext\texternal program for pasting\n");
 		printf("\t\t-h\tthis help\n");
 		return EXIT_SUCCESS;
 	}
@@ -852,7 +864,6 @@ int main(int argc, char *argv[]) {
 			draw(d, f, &fp, buffers, num, selected, message);
 			XFlush(d);
 			usleep(hide);
-			printf("unmapping the flash window\n");
 			XUnmapWindow(d, f);
 			message = NULL;
 			continue;
@@ -930,7 +941,8 @@ int main(int argc, char *argv[]) {
 			if (firefox) {
 				printf("firefox again, repeating answer\n");
 				AnswerSelection(d, t, re,
-					buffers, separator, key, False);
+					buffers, separator, key, False,
+					external);
 				firefox = False;
 				ShortTime(&last, interval, True);
 				break;
@@ -942,7 +954,8 @@ int main(int argc, char *argv[]) {
 				printf("request after choice, sending\n");
 				chosen = False;
 				AnswerSelection(d, t, re,
-					buffers, separator, key, False);
+					buffers, separator, key, False,
+					external);
 				pending = False;
 				ShortTime(&last, interval, True);
 				break;
@@ -953,7 +966,8 @@ int main(int argc, char *argv[]) {
 			if (ShortTime(&last, interval, False)) {
 				printf("short time, repeating answer\n");
 				AnswerSelection(d, t, re,
-					buffers, separator, key, False);
+					buffers, separator, key, False,
+					external);
 				ShortTime(&last, interval, True);
 				break;
 			}
@@ -1219,7 +1233,8 @@ int main(int argc, char *argv[]) {
 			if (! click) {
 				printf("sending selection\n");
 				AnswerSelection(d, t, &request,
-					buffers, separator, key, False);
+					buffers, separator, key, False,
+					external);
 				pending = False;
 			}
 			else if (key != -1) {
