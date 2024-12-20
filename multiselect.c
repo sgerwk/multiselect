@@ -16,8 +16,101 @@
 
 /*
  * state variables
- * 	pending		a program requests the selection, which is not sent yet
- * 	showing		the selection menu is on the screen
+ *	pending		a program requests the selection, which is not sent yet
+ *	showing		the selection menu is on the screen
+ *	chosen		user choose the string to send
+ *	key		index of the choosen string
+ *
+ *
+ * sequences
+ *
+ *	request to send the selection
+ *		SelectionRequest	refuse
+ *		ShowWindow		map window
+ *		...
+ *		KeyPress ButtonRelease	unmap window
+ *		UnmapNotify		send selection if !click
+ *					send middle click (default)
+ *		SelectionRequest	send selection
+ *
+ *	show the flash window
+ *		startup			always
+ *		SelectionNotify		selection arrived
+ *		KeyPress ButtonRelease	list of strings changed
+ *		SelectionClear		show error message if no selection
+ *			map the flash window
+ *			-> Expose on the flash window
+ *		Expose on the flash window
+ *			draw
+ *			sleep
+ *			unmap
+ *
+ *
+ * events
+ *
+ *	Expose on the flash window
+ *		draw, wait, unmap
+ *
+ *	KeyPress when window not mapped
+ *		[only possible due to key grabbing]
+ *		-> ShowWindow in the same iteration
+ *
+ *	SelectionRequest
+ *		[another program requests the selection]
+ *		send the selection if a string is chosen
+ *		otherwise refuse to send but store the request
+ *		-> ShowWindow in the same iteration
+ *
+ *	ShowWindow
+ *		map the window
+ *		-> MapNotify
+ *		-> Expose
+ *
+ *	Expose
+ *		draw the window
+ *		store and change focus
+ *		grab pointer
+ *
+ *	SelectionNotify
+ *		[another program sent its selection]
+ *		add the selection to the list
+ *		unmap the window so that the user can select another string
+ *		-> UnmapNotify
+ *		show the flash window
+ *		-> Expose on the flash window
+ *
+ *	KeyPress
+ *		z,F2		request the selection
+ *				-> SelectionNotify
+ *				unmap window
+ *				show the flash window
+ *		s,F3,del	remove a string
+ *		z,F4		remove all strings
+ *				unmap window
+ *				show the flash window
+ *		q,F5		remove all strings
+ *		ret,...		key = index of the string
+ *
+ *	ButtonRelease
+ *		V button	request primary selection
+ *				-> SelectionNotify
+ *		X button	program termination on next event
+ *		otherwise	key = index of the string
+ *		unmap the window
+ *		-> UnmapNotify
+ *
+ *	UnmapNotify
+ *		unmap, revert focus, etc.
+ *		! click		send selection
+ *		click, chosen	send middle-click
+ *
+ *	SelectionClear
+ *		! daemon	program termination on next event
+ *		daemon		nop
+ *		continuous	request the selection
+ *
+ *	MapNotify
+ *		showing = True
  */
 
 /*
