@@ -1146,7 +1146,7 @@ int main(int argc, char *argv[]) {
 					selected = num - 1;
 			}
 			printf("index: %d\n", key);
-			
+
 			if (keep) {
 				printf("keep window open\n");
 				ResizeWindow(d, w, wp.fs, num);
@@ -1265,8 +1265,9 @@ int main(int argc, char *argv[]) {
 				break;
 			if (num >= MAXNUM)
 				break;
+			printf("requesting the primary selection\n");
 			if (! RequestPrimarySelection(d, w)) {
-				printf("requested the primary selection\n");
+				printf("no primary selection\n");
 				hide = messagehide;
 				message = selectmessage;
 				XMapRaised(d, f);
