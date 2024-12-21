@@ -1320,7 +1320,7 @@ int main(int argc, char *argv[]) {
 				stayinloop = False;
 				break;
 			}
-			if (! pending && ! force)
+			if ((! pending && ! force) || e.xmap.event != w)
 				break;
 			ShortTime(&last, interval, True);
 			if (! click) {
