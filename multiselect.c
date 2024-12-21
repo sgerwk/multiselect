@@ -1092,8 +1092,8 @@ int main(int argc, char *argv[]) {
 			if (prev == None && pprev != w) {
 				prev = pprev;
 				ret = pret;
-				printf("previous focus: 0x%lX\n", prev);
 			}
+			printf("previous focus: 0x%lX\n", pprev);
 
 					/* map window */
 
@@ -1324,7 +1324,8 @@ int main(int argc, char *argv[]) {
 				break;
 			ShortTime(&last, interval, True);
 			if (! click) {
-				printf("sending selection\n");
+				printf("sending selection ");
+				printf("to 0x%lX\n", request.requestor);
 				AnswerSelection(d, t, &request,
 					buffers, separator, key, False,
 					external);
