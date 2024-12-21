@@ -535,7 +535,6 @@ Bool AnswerSelection(Display *d, Time t, XSelectionRequestEvent *request,
 		char *external) {
 	char *selection, *start;
 	char *call;
-	int ret;
 
 	if (key == -1) {
 		RefuseSelection(d, request);
@@ -548,14 +547,23 @@ Bool AnswerSelection(Display *d, Time t, XSelectionRequestEvent *request,
 		start = strchr(buffers[key], separator);
 		selection = start ? start + 1 : buffers[key];
 	}
+
 	if (external) {
 		call = malloc(strlen(external) + 40 + strlen(selection));
-		sprintf(call, external, request->requestor, selection);
-		printf("calling \"%s\"\n", call);
-		ret = system(call);
-		free(call);
-		if (ret == 0)
+		sprintf(call, "%s test 0x%lX %s",
+			external, request->requestor, selection);
+		printf("===> \"%s\"\n", call);
+		if (system(call) != 0)
+			free(call);
+		else {
+			RefuseSelection(d, request);
+			sprintf(call, "%s paste 0x%lX %s",
+				external, request->requestor, selection);
+			printf("===> \"%s\"\n", call);
+			system(call);
+			free(call);
 			return False;
+		}
 	}
 	return SendSelection(d, t, request,
 		selection, strlen(selection), stringonly);
