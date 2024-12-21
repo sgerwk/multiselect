@@ -558,7 +558,8 @@ Bool AnswerSelection(Display *d, Time t, XSelectionRequestEvent *request,
 		printf("calling %s\n", call);
 		ret = system(call);
 		free(call);
-		return ret;
+		if (ret == 0)
+			return False;
 	}
 	return SendSelection(d, t, request,
 		selection, strlen(selection), stringonly);

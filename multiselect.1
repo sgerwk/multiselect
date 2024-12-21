@@ -97,7 +97,8 @@ see \fICLICK MODE AND PASTE MODE\fP, below
 .BI -e " external
 call an external program to do the actual pasting; the requestor window and the
 string to be pasted replace \fI%d\fP and \fI%s\fP in \fIexternal\fP, in this
-order
+order; if the program returns a non-zero value, the selected string is pasted
+as usual
 
 .TP
 .B -h
