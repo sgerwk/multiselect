@@ -553,9 +553,9 @@ Bool AnswerSelection(Display *d, Time t, XSelectionRequestEvent *request,
 		selection = start ? start + 1 : buffers[key];
 	}
 	if (external) {
-		call = malloc(strlen(external) + 30);
+		call = malloc(strlen(external) + 40 + strlen(selection));
 		sprintf(call, external, request->requestor, selection);
-		printf("calling %s\n", call);
+		printf("calling \"%s\"\n", call);
 		ret = system(call);
 		free(call);
 		if (ret == 0)
