@@ -532,7 +532,7 @@ Bool SendSelection(Display *d, Time t, XSelectionRequestEvent *re,
  */
 Bool AnswerSelection(Display *d, Time t, XSelectionRequestEvent *request,
 		char **buffers, char separator, int key, int stringonly,
-		char *external) {
+		char *external, int repeated) {
 	char *selection, *start;
 	char *call;
 
@@ -553,10 +553,15 @@ Bool AnswerSelection(Display *d, Time t, XSelectionRequestEvent *request,
 		sprintf(call, "%s test 0x%lX %s",
 			external, request->requestor, selection);
 		printf("===> \"%s\"\n", call);
+		fflush(stdout);
 		if (system(call) != 0)
 			free(call);
 		else {
 			RefuseSelection(d, request);
+			if (repeated) {
+				printf("request already served\n");
+				return False;
+			}
 			sprintf(call, "%s paste 0x%lX %s",
 				external, request->requestor, selection);
 			printf("===> \"%s\"\n", call);
@@ -959,6 +964,7 @@ int main(int argc, char *argv[]) {
 
 	for (stayinloop = True, exitnext = False; stayinloop;) {
 		XNextEvent(d, &e);
+		printf("=== event, type %d\n", e.type);
 
 		if (e.type == Expose && e.xexpose.window == f) {
 			printf("expose on the flash window\n");
@@ -1043,7 +1049,7 @@ int main(int argc, char *argv[]) {
 				printf("firefox again, repeating answer\n");
 				AnswerSelection(d, t, re,
 					buffers, separator, key, False,
-					external);
+					external, True);
 				firefox = False;
 				ShortTime(&last, interval, True);
 				break;
@@ -1056,7 +1062,7 @@ int main(int argc, char *argv[]) {
 				chosen = False;
 				AnswerSelection(d, t, re,
 					buffers, separator, key, False,
-					external);
+					external, False);
 				pending = False;
 				ShortTime(&last, interval, True);
 				break;
@@ -1068,7 +1074,7 @@ int main(int argc, char *argv[]) {
 				printf("short time, repeating answer\n");
 				AnswerSelection(d, t, re,
 					buffers, separator, key, False,
-					external);
+					external, True);
 				ShortTime(&last, interval, True);
 				break;
 			}
@@ -1336,7 +1342,7 @@ int main(int argc, char *argv[]) {
 				printf("to 0x%lX\n", request.requestor);
 				AnswerSelection(d, t, &request,
 					buffers, separator, key, False,
-					external);
+					external, False);
 				pending = False;
 			}
 			else if (key != -1) {

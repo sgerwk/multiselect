@@ -95,9 +95,10 @@ see \fICLICK MODE AND PASTE MODE\fP, below
 
 .TP
 .BI -e " external
-call an external program to do the actual pasting: first with arguments "test
-requestor text", second with arguments "paste requestor text" only if the first
-call returns 0; otherwise, the selected string is pasted as usual
+call an external program to do the actual pasting; it is called as \fIexternal
+test requestor text\fP; if it returns 0, it is called again with arguments
+\fIexternal paste requestor text\fP ; otherwise, the selected string is pasted
+as usual
 
 .TP
 .B -h
