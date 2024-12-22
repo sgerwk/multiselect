@@ -196,9 +196,7 @@
  *
  * ideally, the window should only be redrawn on Expose events, while closure
  * be controlled by a timeout; just flushing the X queue, waiting and closing
- * the window in response to Expose events seems to work anyway; a fallback
- * based on the elapsed time ensures that the window is eventually closed even
- * if no Expose event is received
+ * the window in response to Expose events works anyway
  */
 
 #include <stdlib.h>
