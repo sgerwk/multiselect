@@ -528,13 +528,22 @@ Bool SendSelection(Display *d, Time t, XSelectionRequestEvent *re,
 		return True;
 	}
 
-				/* check property (obsolete clients) */
+				/* check property */
 
 	if (re->property != None)
 		property = re->property;
 	else {
-		printf("note: property is None\n");
-		property = re->target;
+		printf("note: property is None, attempting _XT_SELECTION_1\n");
+		property = XInternAtom(d, "_XT_SELECTION_1", True);
+		if (property == None) {
+			printf("note: property is None again, ");
+			printf("creating _XT_SELECTION_1\n");
+			property = XInternAtom(d, "_XT_SELECTION_1", False);
+			printf("this will probably not work: ");
+			printf("client not expecting pasting\n");
+			printf("opening by F1 and pasting with -p ");
+			printf("does usually not work\n");
+		}
 	}
 
 				/* request precedes time of ownership */
@@ -564,7 +573,7 @@ Bool SendSelection(Display *d, Time t, XSelectionRequestEvent *re,
 		printf("storing selection \"%s\" in property ", chars);
 		PrintAtomName(d, property);
 		printf("\n");
-		XChangeProperty(d, re->requestor, re->property, re->target, 8,
+		XChangeProperty(d, re->requestor, property, re->target, 8,
 			PropModeReplace,
 			(unsigned char *) chars, nchars);
 	}
@@ -580,7 +589,7 @@ Bool SendSelection(Display *d, Time t, XSelectionRequestEvent *re,
 
 	XSendEvent(d, re->requestor, True, NoEventMask, &ne);
 
-	printf("selection sent and notified\n");
+	printf("selection sent and notified to 0x%lX\n", re->requestor);
 
 	return False;
 }
@@ -1015,6 +1024,7 @@ int main(int argc, char *argv[]) {
 	pending = False;
 	showing = False;
 	chosen = False;
+	openbykey = False;
 	firefox = False;
 	prev = None;
 	last.tv_sec = 0;
@@ -1383,10 +1393,6 @@ int main(int argc, char *argv[]) {
 				if (e.xunmap.event == w)
 					prev = None;
 			}
-			if (e.xunmap.window == w) {
-				showing = False;
-				openbykey = False;
-			}
 			if (e.xunmap.window == f && (num == 0 && ! daemon)) {
 				stayinloop = 0;
 				break;
@@ -1399,14 +1405,18 @@ int main(int argc, char *argv[]) {
 			}
 			if (e.xunmap.event != w)
 				break;
+			showing = False;
 			if (! pending && ! (force && openbykey))
 				break;
 			ShortTime(&last, interval, True);
 			if (! click) {
 				printf("sending selection ");
 				printf("to 0x%lX\n", request.requestor);
-				if (force && openbykey)
+				if (force && openbykey) {
 					request.requestor = sfocus;
+					request.target = XA_STRING;
+					request.property = None;
+				}
 				AnswerSelection(d, t, &request,
 					buffers, separator, key, False,
 					external, False);
@@ -1416,13 +1426,13 @@ int main(int argc, char *argv[]) {
 			else if (key != -1) {
 				printf("sending middle button click\n");
 				chosen = True;
-
 				printf("restore x=%d y=%d\n", x, y);
 				XWarpPointer(d, None, r, 0, 0, 0, 0, x, y);
 				XTestFakeButtonEvent(d, 2, True, CurrentTime);
 				XTestFakeButtonEvent(d, 2, False, 100);
 				pending = True;
 			}
+			openbykey = False;
 			break;
 
 		case SelectionClear:
