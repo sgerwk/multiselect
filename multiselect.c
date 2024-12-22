@@ -1310,7 +1310,7 @@ int main(int argc, char *argv[]) {
 
 		case UnmapNotify:
 			printf("unmap notify: ");
-			PrintWindow(d, e.xmap.event, w, f);
+			PrintWindow(d, e.xunmap.event, w, f);
 			if (prev == None) {
 				printf("no previous focus owner\n");
 				XSetInputFocus(d, PointerRoot, 0, CurrentTime);
@@ -1334,7 +1334,7 @@ int main(int argc, char *argv[]) {
 				stayinloop = False;
 				break;
 			}
-			if ((! pending && ! force) || e.xmap.event != w)
+			if ((! pending && ! force) || e.xunmap.event != w)
 				break;
 			ShortTime(&last, interval, True);
 			if (! click) {
