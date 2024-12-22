@@ -237,6 +237,19 @@
 #define WMNAMEDAEMON "multiselectd"
 
 /*
+ * string chosen
+ */
+char *ChosenString(char **buffers, char separator, int key) {
+	char *start;
+	if (key == -1)
+		return NULL;
+	if (separator == '\0')
+		return buffers[key];
+	start = strchr(buffers[key], separator);
+	return start ? start + 1 : buffers[key];
+}
+
+/*
  * print a key
  */
 void PrintKey(char *label, int k) {
@@ -471,6 +484,28 @@ Bool AcquirePrimarySelection(Display *d, Window root, Window w, Time *t) {
 }
 
 /*
+ * call the external program, if any
+ */
+int External(Display *d, char *external, Bool test,
+		Window requestor, char *selection) {
+	char *call;
+	int ret;
+
+	if (external == NULL)
+		return True;
+
+	XFlush(d);
+	call = malloc(strlen(external) + 40 + strlen(selection));
+	sprintf(call, "%s %s 0x%lX %s",
+		external, test ? "test" : "paste", requestor, selection);
+	printf("===> \"%s\"\n", call);
+	fflush(stdout);
+	ret = system(call);
+	free(call);
+	return ret;
+}
+
+/*
  * refuse to send selection
  */
 void RefuseSelection(Display *d, XSelectionRequestEvent *re) {
@@ -598,46 +633,23 @@ Bool SendSelection(Display *d, Time t, XSelectionRequestEvent *re,
  * answer a request for the selection
  */
 Bool AnswerSelection(Display *d, Time t, XSelectionRequestEvent *request,
-		char **buffers, char separator, int key, int stringonly,
+		char *selection, int stringonly,
 		char *external, int repeated) {
-	char *selection, *start;
-	char *call;
-
-	if (key == -1) {
+	if (selection == NULL) {
 		RefuseSelection(d, request);
 		return False;
 	}
 
-	if (separator == '\0')
-		selection = buffers[key];
+	if (External(d, external, True, request->requestor, selection))
+		printf("external program does not serve this request\n");
 	else {
-		start = strchr(buffers[key], separator);
-		selection = start ? start + 1 : buffers[key];
-	}
-
-	if (external) {
-		call = malloc(strlen(external) + 40 + strlen(selection));
-		sprintf(call, "%s test 0x%lX %s",
-			external, request->requestor, selection);
-		printf("===> \"%s\"\n", call);
-		fflush(stdout);
-		if (system(call) != 0)
-			free(call);
-		else {
-			RefuseSelection(d, request);
-			XFlush(d);
-			if (repeated) {
-				printf("request already served\n");
-				return False;
-			}
-			sprintf(call, "%s paste 0x%lX %s",
-				external, request->requestor, selection);
-			printf("===> \"%s\"\n", call);
-			fflush(stdout);
-			system(call);
-			free(call);
+		RefuseSelection(d, request);
+		if (repeated) {
+			printf("request already served\n");
 			return False;
 		}
+		External(d, external, False, request->requestor, selection);
+		return False;
 	}
 	return SendSelection(d, t, request,
 		selection, strlen(selection), stringonly);
@@ -816,7 +828,7 @@ int main(int argc, char *argv[]) {
 	XEvent e;
 	XSelectionRequestEvent *re, request;
 	KeySym k;
-	Window prev, pprev, sfocus;
+	Window prev, pprev, sfocus, dest;
 	XWindowAttributes wa;
 	int il;
 	int selected;
@@ -831,7 +843,7 @@ int main(int argc, char *argv[]) {
 	Bool click = True;
 	Bool f1 = False, f2 = False, f5 = False, force = False;
 	Bool usage = False;
-	char **buffers, separator, *terminator, *external = NULL;
+	char **buffers, separator, *terminator, *selection, *external = NULL;
 	int a, num;
 
 	(void) dm;
@@ -1072,6 +1084,7 @@ int main(int argc, char *argv[]) {
 			printf("\n");
 
 			re = &e.xselectionrequest;
+			selection = ChosenString(buffers, separator, key);
 
 					/* request from self */
 
@@ -1118,9 +1131,8 @@ int main(int argc, char *argv[]) {
 
 			if (firefox) {
 				printf("firefox again, repeating answer\n");
-				AnswerSelection(d, t, re,
-					buffers, separator, key, False,
-					external, True);
+				AnswerSelection(d, t, re, selection,
+					False, external, True);
 				firefox = False;
 				ShortTime(&last, interval, True);
 				break;
@@ -1131,9 +1143,8 @@ int main(int argc, char *argv[]) {
 			if (click && chosen) {
 				printf("request after choice, sending\n");
 				chosen = False;
-				AnswerSelection(d, t, re,
-					buffers, separator, key, False,
-					external, False);
+				AnswerSelection(d, t, re, selection,
+					False, external, False);
 				pending = False;
 				ShortTime(&last, interval, True);
 				break;
@@ -1143,9 +1154,8 @@ int main(int argc, char *argv[]) {
 
 			if (ShortTime(&last, interval, False)) {
 				printf("short time, repeating answer\n");
-				AnswerSelection(d, t, re,
-					buffers, separator, key, False,
-					external, True);
+				AnswerSelection(d, t, re, selection,
+					False, external, True);
 				ShortTime(&last, interval, True);
 				break;
 			}
@@ -1409,7 +1419,10 @@ int main(int argc, char *argv[]) {
 			if (! pending && ! (force && openbykey))
 				break;
 			ShortTime(&last, interval, True);
-			if (! click) {
+			dest = force && openbykey ? sfocus : request.requestor;
+			selection = ChosenString(buffers, separator, key);
+			if (! click ||
+			    ! External(d, external, True, dest, selection)) {
 				printf("sending selection ");
 				printf("to 0x%lX\n", request.requestor);
 				if (force && openbykey) {
@@ -1417,9 +1430,8 @@ int main(int argc, char *argv[]) {
 					request.target = XA_STRING;
 					request.property = None;
 				}
-				AnswerSelection(d, t, &request,
-					buffers, separator, key, False,
-					external, False);
+				AnswerSelection(d, t, &request, selection,
+					False, external, False);
 				sfocus = None;
 				pending = False;
 			}
