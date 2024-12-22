@@ -13,8 +13,9 @@
 /*
  * state variables
  *	pending		a program requests the selection, which is not sent yet
+ *	openbykey	opened by a keystroke, not a selection request
  *	showing		the selection menu is on the screen
- *	chosen		user choose the string to send
+ *	chosen		the string to send has been chosen
  *	key		index of the choosen string
  *
  *
@@ -32,7 +33,7 @@
  *	show the flash window
  *		startup			always
  *		SelectionNotify		selection arrived
- *		KeyPress ButtonRelease	list of strings changed
+ *		KeyPress ButtonRelease	if the list of strings changed
  *		SelectionClear		show error message if no selection
  *			map the flash window
  *			-> Expose on the flash window
@@ -40,6 +41,13 @@
  *			draw
  *			sleep
  *			unmap
+ *
+ *	focus
+ *		the previous focus owner is stored to
+ *			- restore on closing
+ *			- send selection when openbykey && force
+ *		stored on ShowWindow
+ *		restored on UnmapNotify
  *
  *
  * events
@@ -743,11 +751,11 @@ int main(int argc, char *argv[]) {
 	int starthide = 800000, changehide = 500000, messagehide = 800000;
 	char *message = NULL, *selectmessage = "select a string first";
 	Bool exitnext, stayinloop;
-	Bool pending, showing, firefox, chosen, changed, keep;
+	Bool pending, showing, firefox, chosen, changed, keep, openbykey;
 	XEvent e;
 	XSelectionRequestEvent *re, request;
 	KeySym k;
-	Window prev, pprev;
+	Window prev, pprev, sfocus;
 	XWindowAttributes wa;
 	int il;
 	int selected;
@@ -987,6 +995,7 @@ int main(int argc, char *argv[]) {
 					continue;
 				}
 				e.type = ShowWindow;
+				openbykey = True;
 				// -> ShowWindow
 				break;
 			}
@@ -1320,10 +1329,13 @@ int main(int argc, char *argv[]) {
 				printf("revert focus 0x%lX -> 0x%lX\n",
 					pprev, prev);
 				XSetInputFocus(d, prev, ret, CurrentTime);
+				sfocus = prev;
 				prev = None;
 			}
-			if (e.xunmap.window == w)
+			if (e.xunmap.window == w) {
 				showing = False;
+				openbykey = False;
+			}
 			if (e.xunmap.window == f && (num == 0 && ! daemon)) {
 				stayinloop = 0;
 				break;
@@ -1334,15 +1346,20 @@ int main(int argc, char *argv[]) {
 				stayinloop = False;
 				break;
 			}
-			if ((! pending && ! force) || e.xunmap.event != w)
+			if (e.xunmap.event != w)
+				break;
+			if (! pending && ! (force && openbykey))
 				break;
 			ShortTime(&last, interval, True);
 			if (! click) {
 				printf("sending selection ");
 				printf("to 0x%lX\n", request.requestor);
+				if (force && openbykey)
+					request.requestor = sfocus;
 				AnswerSelection(d, t, &request,
 					buffers, separator, key, False,
 					external, False);
+				sfocus = None;
 				pending = False;
 			}
 			else if (key != -1) {
