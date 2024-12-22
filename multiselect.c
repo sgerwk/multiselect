@@ -42,12 +42,22 @@
  *			sleep
  *			unmap
  *
+ *
+ * notes
+ *
  *	focus
  *		the previous focus owner is stored to
- *			- restore on closing
- *			- send selection when openbykey && force
+ *			- restore it on closing
+ *			- send the selection when the menu selector has been
+ *			  opened by F1 and the selection is to be pasted
+ *			  without first sending a middle button click
  *		stored on ShowWindow
  *		restored on UnmapNotify
+ *
+ *	the external program
+ *		called first to tell whether it is serving this selection
+ *		- when opened by F1 and a string is chosen
+ *		- when pasting
  *
  *
  * events
