@@ -237,6 +237,50 @@
 #define WMNAMEDAEMON "multiselectd"
 
 /*
+ * print a key
+ */
+void PrintKey(char *label, int k) {
+	printf("%s", label);
+	switch (k) {
+	case XK_F1:
+		printf("F1\n");
+		break;
+	case XK_F2:
+		printf("F2\n");
+		break;
+	case XK_F3:
+		printf("F3\n");
+		break;
+	case XK_F4:
+		printf("F4\n");
+		break;
+	case XK_F5:
+		printf("F5\n");
+		break;
+	case XK_Up:
+		printf("Up\n");
+		break;
+	case XK_Down:
+		printf("Down\n");
+		break;
+	case XK_BackSpace:
+		printf("BackSpace\n");
+		break;
+	case XK_Delete:
+		printf("Delete\n");
+		break;
+	case XK_Return:
+		printf("Return\n");
+		break;
+	case XK_KP_Enter:
+		printf("Enter\n");
+		break;
+	default:
+		printf("%c\n", (unsigned char) k);
+	}
+}
+
+/*
  * print window name
  */
 void PrintWindow(Display *d, Window w, Window m, Window f) {
@@ -986,7 +1030,7 @@ int main(int argc, char *argv[]) {
 		if (e.type == KeyPress && ! showing) {
 			printf("keycode: %d\n", e.xkey.keycode);
 			k = XLookupKeysym(&e.xkey, 0);
-			printf("k: %c\n", (unsigned char) k);
+			PrintKey("k: ", k);
 			switch (k) {
 			case XK_F1:
 				if (showing) {
@@ -1174,7 +1218,7 @@ int main(int argc, char *argv[]) {
 		case KeyPress:
 			printf("keycode: %d\n", e.xkey.keycode);
 			k = XLookupKeysym(&e.xkey, 0);
-			printf("k: %c\n", (unsigned char) k);
+			PrintKey("k: ", k);
 			printf("pending: %d\n", pending);
 			key = keyindex(k);
 			printf("key index: %d\n", key);
