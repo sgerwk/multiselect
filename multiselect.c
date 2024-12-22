@@ -1372,17 +1372,16 @@ int main(int argc, char *argv[]) {
 		case UnmapNotify:
 			printf("unmap notify: ");
 			PrintWindow(d, e.xunmap.event, w, f);
-			if (prev == None) {
+			if (prev == None)
 				printf("no previous focus owner\n");
-				XSetInputFocus(d, PointerRoot, 0, CurrentTime);
-			}
 			else {
 				XGetInputFocus(d, &pprev, &pret);
 				printf("revert focus 0x%lX -> 0x%lX\n",
 					pprev, prev);
 				XSetInputFocus(d, prev, ret, CurrentTime);
 				sfocus = prev;
-				prev = None;
+				if (e.xunmap.event == w)
+					prev = None;
 			}
 			if (e.xunmap.window == w) {
 				showing = False;
