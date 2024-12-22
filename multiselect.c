@@ -558,6 +558,7 @@ Bool AnswerSelection(Display *d, Time t, XSelectionRequestEvent *request,
 			free(call);
 		else {
 			RefuseSelection(d, request);
+			XFlush(d);
 			if (repeated) {
 				printf("request already served\n");
 				return False;
@@ -565,6 +566,7 @@ Bool AnswerSelection(Display *d, Time t, XSelectionRequestEvent *request,
 			sprintf(call, "%s paste 0x%lX %s",
 				external, request->requestor, selection);
 			printf("===> \"%s\"\n", call);
+			fflush(stdout);
 			system(call);
 			free(call);
 			return False;
