@@ -494,7 +494,7 @@ Bool AcquirePrimarySelection(Display *d, Window root, Window w, Time *t) {
 }
 
 /*
- * call the external program, if any
+ * call the external program
  */
 int External(Display *d, char *external, Bool test,
 		Window requestor, char *selection) {
@@ -1426,16 +1426,16 @@ int main(int argc, char *argv[]) {
 			if (e.xunmap.event != w)
 				break;
 			showing = False;
-			if (! pending && ! (force && openbykey))
+			if (! pending && ! (openbykey && force))
 				break;
 			ShortTime(&last, interval, True);
-			dest = force && openbykey ? sfocus : request.requestor;
+			dest = openbykey && force ? sfocus : request.requestor;
 			selection = ChosenString(buffers, separator, key);
 			if (! click ||
 			    ! External(d, external, True, dest, selection)) {
-				printf("sending selection ");
+				printf("sending selection \"%s\" ", selection);
 				printf("to 0x%lX\n", request.requestor);
-				if (force && openbykey) {
+				if (openbykey && force) {
 					request.requestor = sfocus;
 					request.target = XA_STRING;
 					request.property = None;
