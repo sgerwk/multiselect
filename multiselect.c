@@ -281,6 +281,21 @@ void PrintKey(char *label, int k) {
 }
 
 /*
+ * print an atom name
+ */
+void PrintAtomName(Display *d, Atom a) {
+	char *name;
+
+	if (a == None) {
+		printf("None");
+		return;
+	}
+	name = XGetAtomName(d, a);
+	printf("%s", name);
+	XFree(name);
+}
+
+/*
  * print window name
  */
 void PrintWindow(Display *d, Window w, Window m, Window f) {
@@ -409,17 +424,6 @@ void WindowAtPointer(Display *d, Window w) {
 }
 
 /*
- * print an atom name
- */
-void PrintAtomName(Display *d, Atom a) {
-	char *name;
-
-	name = XGetAtomName(d, a);
-	printf("atom %s", name);
-	XFree(name);
-}
-
-/*
  * get a timestamp for "now" (see ICCCM)
  */
 Time GetTimestampForNow(Display *d, Window w) {
@@ -517,7 +521,9 @@ Bool SendSelection(Display *d, Time t, XSelectionRequestEvent *re,
 				/* check type of selection requested */
 
 	if (UnsupportedSelection(d, re->target, stringonly)) {
-		printf("request for an unsupported type\n");
+		printf("request for an unsupported type: ");
+		PrintAtomName(d, re->target);
+		printf("\n");
 		RefuseSelection(d, re);
 		return True;
 	}
@@ -555,7 +561,9 @@ Bool SendSelection(Display *d, Time t, XSelectionRequestEvent *re,
 			(unsigned char *) &targetlist, targetlen);
 	}
 	else {
-		printf("storing selection: %s\n", chars);
+		printf("storing selection \"%s\" in property ", chars);
+		PrintAtomName(d, property);
+		printf("\n");
 		XChangeProperty(d, re->requestor, re->property, re->target, 8,
 			PropModeReplace,
 			(unsigned char *) chars, nchars);
