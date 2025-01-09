@@ -959,7 +959,7 @@ int main(int argc, char *argv[]) {
 	r = DefaultRootWindow(d);
 	printf("root window: 0x%lx\n", r);
 
-				/* run or not */
+				/* do not run if already running */
 
 	if (WindowNameExists(d, r, WMNAME) ||
 	    (daemon && WindowNameExists(d, r, WMNAMEDAEMON))) {
