@@ -119,7 +119,7 @@
  *		click, chosen	send middle-click
  *
  *	SelectionClear
- *		! daemon	program termination on next event
+ *		! daemon	program termination
  *		daemon		nop
  *		continuous	request the selection
  *
@@ -959,7 +959,7 @@ int main(int argc, char *argv[]) {
 	r = DefaultRootWindow(d);
 	printf("root window: 0x%lx\n", r);
 
-				/* run or not, daemon or not */
+				/* run or not */
 
 	if (WindowNameExists(d, r, WMNAME) ||
 	    (daemon && WindowNameExists(d, r, WMNAMEDAEMON))) {
@@ -1466,8 +1466,9 @@ int main(int argc, char *argv[]) {
 				break;
 			}
 			if (! daemon) {
-				printf("no daemon mode, exit next\n");
-				exitnext = 1;
+				printf("no daemon mode, exiting\n");
+				stayinloop = 0;
+				break;
 			}
 			if (! continuous)
 				break;
