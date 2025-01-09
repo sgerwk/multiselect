@@ -848,7 +848,7 @@ int main(int argc, char *argv[]) {
 	unsigned int dm;
 
 	int opt;
-	Bool daemon = False, daemonother, continuous = False;
+	Bool daemon = False, continuous = False;
 	Bool immediate = False;
 	Bool click = True;
 	Bool f1 = False, f2 = False, f5 = False, force = False;
@@ -961,8 +961,8 @@ int main(int argc, char *argv[]) {
 
 				/* run or not, daemon or not */
 
-	daemonother = WindowNameExists(d, r, WMNAMEDAEMON);
-	if (WindowNameExists(d, r, WMNAME) || (daemon && daemonother)) {
+	if (WindowNameExists(d, r, WMNAME) ||
+	    (daemon && WindowNameExists(d, r, WMNAMEDAEMON))) {
 		printf("%s already running\n", WMNAME);
 		XCloseDisplay(d);
 		exit(EXIT_FAILURE);
