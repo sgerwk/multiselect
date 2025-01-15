@@ -18,6 +18,7 @@ multiselect - a multiple selections server for X11
 [\fI-f\fP]
 [\fI-p\fP]
 [\fI-t sep\fP]
+[\fI-T sep\fP]
 [\fI-e ext\fP]
 [-|\fIstring ...\fP]
 
@@ -87,6 +88,12 @@ down cursor keys, without the need to press 'Enter'
 .BI -t " sep
 everything up to the first \fIsep\fP character in each string is displayed in
 the menu but not pasted; see \fILABELS\fP, below
+
+.TP
+.BI -T " sep
+like \fI-t\fP, but only what is before the first \fIsep\fP character in each
+string is displayed in the menu; since it is inteded for pasting passwords,
+it disables passing the strings as commandline arguments
 
 .TP
 .B -p

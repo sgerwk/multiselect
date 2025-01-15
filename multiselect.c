@@ -727,13 +727,14 @@ struct WindowParameters {
  * draw the window
  */
 void draw(Display *d, Window w, struct WindowParameters *wp,
-		char *buffers[], int n, int selected, char *message) {
+		char *buffers[], int n, int selected, char pw, char *message) {
 	Window r;
 	int x, y;
 	unsigned int width, height, bw, depth, twidth;
 	int lpos, interline;
 	int i;
 	char num[12], help[] = "multiselect";
+	char *line;
 
 	XClearWindow(d, w);
 	XGetGeometry(d, w, &r, &x, &y, &width, &height, &bw, &depth);
@@ -797,8 +798,9 @@ void draw(Display *d, Window w, struct WindowParameters *wp,
 				sprintf(num, "%c ", i + 'a' - 9);
 			XDrawString(d, w, wp->g, 0, lpos, num, strlen(num));
 			twidth = XTextWidth(wp->fs, num, strlen(num));
+			line = strchrnul(buffers[i], pw);
 			XDrawString(d, w, wp->g, twidth, lpos,
-				buffers[i], MIN(strlen(buffers[i]), 100));
+				buffers[i], MIN(line - buffers[i], 100));
 		}
 		lpos += interline;
 	}
@@ -852,6 +854,7 @@ int main(int argc, char *argv[]) {
 	Bool immediate = False;
 	Bool click = True;
 	Bool f1 = False, f2 = False, f5 = False, force = False;
+	char pw = '\0';
 	Bool usage = False;
 	char **buffers, separator, *terminator, *selection, *external = NULL;
 	int a, num;
@@ -860,7 +863,7 @@ int main(int argc, char *argv[]) {
 
 				/* parse arguments */
 
-	while (-1 != (opt = getopt(argc, argv, "dk:fcit:pe:h"))) {
+	while (-1 != (opt = getopt(argc, argv, "dk:fcit:T:pe:h"))) {
 		switch (opt) {
 		case 'd':
 			daemon = True;
@@ -897,6 +900,10 @@ int main(int argc, char *argv[]) {
 		case 't':
 			separator = optarg[0];
 			break;
+		case 'T':
+			separator = optarg[0];
+			pw = separator;
+			break;
 		case 'e':
 			external = optarg;
 			break;
@@ -922,6 +929,10 @@ int main(int argc, char *argv[]) {
 			if (terminator)
 				*terminator = '\0';
 		}
+	}
+	else if (pw != '\0' && argc - 1 > 0) {
+		printf("passing strings on the command line forbidden by -T\n");
+		exit(EXIT_FAILURE);
 	}
 	else {
 		num = MIN(argc - 1, MAXNUM);
@@ -1060,7 +1071,7 @@ int main(int argc, char *argv[]) {
 
 		if (e.type == Expose && e.xexpose.window == f) {
 			printf("expose on the flash window\n");
-			draw(d, f, &fp, buffers, num, selected, message);
+			draw(d, f, &fp, buffers, num, selected, pw, message);
 			XFlush(d);
 			usleep(hide);
 			XUnmapWindow(d, f);
@@ -1211,7 +1222,7 @@ int main(int argc, char *argv[]) {
 
 		case Expose:
 			printf("expose\n");
-			draw(d, w, &wp, buffers, num, selected, NULL);
+			draw(d, w, &wp, buffers, num, selected, pw, NULL);
 			XSetInputFocus(d, w, RevertToNone, CurrentTime);
 			// grab pointer to disallow the other client from
 			// making further requests
@@ -1348,7 +1359,8 @@ int main(int argc, char *argv[]) {
 			if (keep) {
 				printf("keep window open\n");
 				ResizeWindow(d, w, wp.fs, num);
-				draw(d, w, &wp, buffers, num, selected, NULL);
+				draw(d, w, &wp,
+				     buffers, num, selected, pw, NULL);
 				break;
 			}
 
