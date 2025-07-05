@@ -727,7 +727,8 @@ struct WindowParameters {
  * draw the window
  */
 void draw(Display *d, Window w, struct WindowParameters *wp,
-		char *buffers[], int n, int selected, char pw, char *message) {
+		char *buffers[], int n, int selected, int emphasized,
+		char pw, char *message) {
 	Window r;
 	int x, y;
 	unsigned int width, height, bw, depth, twidth;
@@ -745,10 +746,18 @@ void draw(Display *d, Window w, struct WindowParameters *wp,
 	for (i = -1; i < n; i++) {
 		XSetBackground(d, wp->g, wp->white);
 		XSetForeground(d, wp->g, wp->black);
-		if (i != selected && i != -1)
+		if (i != selected && i != -1) {
 			XDrawLine(d, w, wp->g,
 				0, lpos + wp->fs->descent,
 				width, lpos + wp->fs->descent);
+			if (i == emphasized) {
+				XFillRectangle(d, w, wp->g,
+					interline,
+					lpos + 1,
+					width - interline * 2,
+					wp->fs->descent -1);
+			}
+		}
 		else {
 			XFillRectangle(d, w, wp->g,
 				0, lpos - wp->fs->ascent,
@@ -765,10 +774,10 @@ void draw(Display *d, Window w, struct WindowParameters *wp,
 				interline,
 				lpos + wp->fs->descent - 3);
 			XFillRectangle(d, w, wp->g,
-				width - interline - 1,
-				lpos - wp->fs->ascent + 1,
-				interline,
-				lpos + wp->fs->descent - 3);
+					width - interline - 1,
+					lpos - wp->fs->ascent + 1,
+					interline,
+					lpos + wp->fs->descent - 3);
 			XSetForeground(d, wp->g, wp->black);
 			XSetLineAttributes(d, wp->g, 5,
 				LineSolid, CapRound, JoinMiter);
@@ -845,7 +854,7 @@ int main(int argc, char *argv[]) {
 	int il;
 	int selected;
 	int ret, pret;
-	int key;
+	int key, lastkey = -2;
 	int x, y, xb, yb;
 	unsigned int dm;
 
@@ -863,7 +872,7 @@ int main(int argc, char *argv[]) {
 
 				/* parse arguments */
 
-	while (-1 != (opt = getopt(argc, argv, "dk:fcit:T:pe:h"))) {
+	while (-1 != (opt = getopt(argc, argv, "dk:fcit:T:lpe:h"))) {
 		switch (opt) {
 		case 'd':
 			daemon = True;
@@ -903,6 +912,9 @@ int main(int argc, char *argv[]) {
 		case 'T':
 			separator = optarg[0];
 			pw = separator;
+			break;
+		case 'l':
+			lastkey = -1;
 			break;
 		case 'e':
 			external = optarg;
@@ -953,6 +965,8 @@ int main(int argc, char *argv[]) {
 		printf("\t\t-c\tadd selected string immediately\n");
 		printf("\t\t-i\tpaste immediately on up and down\n");
 		printf("\t\t-t sep\tlabel separator\n");
+		printf("\t\t-T sep\tsame, hiding the strings\n");
+		printf("\t\t-l\temphasize last choice\n");
 		printf("\t\t-p\tpaste mode\n");
 		printf("\t\t-e ext\texternal program for pasting\n");
 		printf("\t\t-h\tthis help\n");
@@ -1071,7 +1085,8 @@ int main(int argc, char *argv[]) {
 
 		if (e.type == Expose && e.xexpose.window == f) {
 			printf("expose on the flash window\n");
-			draw(d, f, &fp, buffers, num, selected, pw, message);
+			draw(d, f, &fp, buffers, num, selected, lastkey,
+				pw, message);
 			XFlush(d);
 			usleep(hide);
 			XUnmapWindow(d, f);
@@ -1106,6 +1121,8 @@ int main(int argc, char *argv[]) {
 
 			re = &e.xselectionrequest;
 			selection = ChosenString(buffers, separator, key);
+			printf("chosen string: %d\n", key);
+			lastkey = lastkey == -2 ? lastkey : key;
 
 					/* request from self */
 
@@ -1222,7 +1239,8 @@ int main(int argc, char *argv[]) {
 
 		case Expose:
 			printf("expose\n");
-			draw(d, w, &wp, buffers, num, selected, pw, NULL);
+			draw(d, w, &wp, buffers, num, selected, lastkey,
+				pw, NULL);
 			XSetInputFocus(d, w, RevertToNone, CurrentTime);
 			// grab pointer to disallow the other client from
 			// making further requests
@@ -1359,8 +1377,8 @@ int main(int argc, char *argv[]) {
 			if (keep) {
 				printf("keep window open\n");
 				ResizeWindow(d, w, wp.fs, num);
-				draw(d, w, &wp,
-				     buffers, num, selected, pw, NULL);
+				draw(d, w, &wp, buffers, num,
+					selected, lastkey, pw, NULL);
 				break;
 			}
 
