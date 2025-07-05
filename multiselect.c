@@ -1123,6 +1123,7 @@ int main(int argc, char *argv[]) {
 			selection = ChosenString(buffers, separator, key);
 			printf("chosen string: %d\n", key);
 			lastkey = lastkey == -2 ? lastkey : key;
+			selected = -1;
 
 					/* request from self */
 
