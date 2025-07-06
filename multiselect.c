@@ -1311,6 +1311,8 @@ int main(int argc, char *argv[]) {
 					break;
 				key = selected;
 			}
+			else if (k == 'n' && lastkey >= -1)
+				key = (lastkey + 1) % num;
 			else {
 				key = -1;
 				switch (k) {
